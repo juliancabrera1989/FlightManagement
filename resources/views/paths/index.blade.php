@@ -21,6 +21,13 @@
                     @endforeach
                 </select>
             </div>
+            <!-- <div class="mb-3">
+                <label for="order">Order By</label>
+                <select name="order" id="order" class="form-control">
+                    <option value="distance">Distance</option>
+                    <option value="cost">Cost</option>
+                </select>
+            </div> -->
             <button type="submit" class="btn btn-primary">Find Path</button>
         </form>
     </div>

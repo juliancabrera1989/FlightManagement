@@ -31,6 +31,9 @@
             <div>
                 <strong>Final Arrival Time:</strong> {{ $path->final_arrival_time }}
             </div>
+            <div>
+                <strong>Total distance:</strong> {{ $path->total_distance }}
+            </div>
         @endforeach
         <a href="{{ route('paths.index') }}" class="btn btn-primary">Back</a>
     </div> 
