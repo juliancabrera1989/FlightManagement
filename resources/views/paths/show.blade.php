@@ -4,8 +4,11 @@
     <div class="container">
         <h1>Path Details</h1>
         <div id="map" style="height: 500px; width: 100%;"></div>
-        @foreach($paths as $path)
-            <div>
+         @if($paths)
+          @foreach($paths as $criterion => $path)
+              @if($path)
+              <div class="path-details">
+                <h2>Sorted by {{ ucfirst($criterion) }}</h2>
                 <strong>Airports:</strong>
                 <ul>
                     @foreach($path->airports as $airport)
@@ -13,7 +16,7 @@
                         <li>{{ $airport-> latitude }} , {{ $airport-> longitude }}</li>
                     @endforeach
                 </ul>
-            </div>
+              </div>
             <div>
                 <strong>Flights:</strong>
                 <ul>
@@ -32,15 +35,23 @@
                 <strong>Final Arrival Time:</strong> {{ $path->final_arrival_time }}
             </div>
             <div>
-                <strong>Total distance:</strong> {{ $path->total_distance }}
+                  <strong>Total Distance:</strong> {{ number_format($path->total_distance / 1000, 2) }} km
             </div>
+            <div>
+                  <strong>Total Time:</strong> {{ gmdate('H:i:s', $path->total_time) }}
+            </div>
+         </div>
+         @endif
         @endforeach
+       @else
+       <p>No paths found.</p>
+       @endif
         <a href="{{ route('paths.index') }}" class="btn btn-primary">Back</a>
     </div> 
 
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
     <script type="text/javascript">
-     let paths = @json($paths);
+     let paths = @json($paths['distance']);
 // This example creates a 2-pixel-wide red polyline showing
 // the path of William Kingsford Smith's first trans-Pacific flight between
 // Oakland, CA, and Brisbane, Australia.
@@ -60,13 +71,13 @@ function initialize() {
         return {lat: parseFloat(airport.latitude), lng: parseFloat(airport.longitude)};
     });
 
-  var flightPath = new google.maps.Polyline({
+    var flightPath = new google.maps.Polyline({
     path: flightPlanCoordinates,
     geodesic: true,
     strokeColor: '#FF0000',
     strokeOpacity: 1.0,
     strokeWeight: 2
-  });
+     });
 
   
 

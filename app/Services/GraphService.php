@@ -1,52 +1,39 @@
 <?php
 namespace App\Services;
-
-use App\Models\Airport;
 use App\Models\Flight;
-// use League\Geotools\Coordinate\Coordinate;
-// use League\Geotools\Geotools\Distance\Vincenty;
-// use League\Geotools\Geotools;
-use SplPriorityQueue;
+use App\Models\Airport;
 
 class GraphService
 {
-    protected $graph = [];
+    protected $graph;
+    protected $airports;
 
     public function __construct()
     {
-        $this->buildGraph();
+        $this->graph = [];
+        $this->airports = Airport::all();
     }
 
-    protected function buildGraph()
+    public function buildGraph()
     {
         $flights = Flight::all();
+
         foreach ($flights as $flight) {
-            $this->graph[$flight->departure_airport_id][] = [
-                'destination' => $flight->arrival_airport_id,
-                'cost' => $flight->cost,
+            $this->graph[$flight->departure_airport_id][$flight->arrival_airport_id] = [
                 'distance' => $this->calculateDistance(
                     $flight->departureAirport->latitude,
                     $flight->departureAirport->longitude,
                     $flight->arrivalAirport->latitude,
                     $flight->arrivalAirport->longitude
                 ),
+                'cost' => $flight->ticket_cost,
+                'time' => strtotime($flight->arrival_time) - strtotime($flight->departure_time),
                 'flight' => $flight
             ];
         }
     }
 
-    // protected function calculateDistance($lat1, $lng1, $lat2, $lng2)
-    // {
-    //     $coordA = new Coordinate([$lat1, $lng1]);
-    //     $coordB = new Coordinate([$lat2, $lng2]);
-    //     $geotools = new Geotools();
-    //     $distance = $geotools->distance()->setFrom($coordA)->setTo($coordB)->in('km')->haversine();
-    //     return $distance;
-    // }
-
-
-
-    protected function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    public function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         // Radius of the earth in meters
         $earthRadius = 6371000;
@@ -69,50 +56,63 @@ class GraphService
         return $distance;
     }
 
-
-
-    public function dijkstra($start, $end, $criteria = 'distance')
+    public function dijkstra($start, $end, $criteria)
     {
-        $distances = [];
-        $previous = [];
-        $queue = new SplPriorityQueue();
+        $dist = [];
+        $prev = [];
+        $queue = [];
 
-        foreach ($this->graph as $vertex => $neighbors) {
-            $distances[$vertex] = INF;
-            $previous[$vertex] = null;
-            $queue->insert($vertex, INF);
+        foreach ($this->airports as $airport) {
+            $dist[$airport->id] = INF;
+            $prev[$airport->id] = null;
+            $queue[$airport->id] = INF;
         }
-        $distances[$start] = 0;
-        $queue->insert($start, 0);
 
-        while (!$queue->isEmpty()) {
-            $u = $queue->extract();
+        $dist[$start] = 0;
+        $queue[$start] = 0;
 
-            if ($u === $end) {
-                $path = [];
-                while ($previous[$u] !== null) {
-                    $path[] = $u;
-                    $u = $previous[$u];
-                }
-                $path[] = $start;
-                return array_reverse($path);
+        while (!empty($queue)) {
+            $u = array_search(min($queue), $queue);
+            unset($queue[$u]);
+
+            if ($u == $end) {
+                break;
             }
 
             if (!isset($this->graph[$u])) {
                 continue;
             }
 
-            foreach ($this->graph[$u] as $neighbor) {
-                $alt = $distances[$u] + $neighbor[$criteria];
-                if ($alt < $distances[$neighbor['destination']]) {
-                    $distances[$neighbor['destination']] = $alt;
-                    $previous[$neighbor['destination']] = $u;
-                    $queue->insert($neighbor['destination'], -$alt);
+            foreach ($this->graph[$u] as $v => $details) {
+                $alt = $dist[$u] + $details[$criteria];
+
+                if ($alt < $dist[$v]) {
+                    $dist[$v] = $alt;
+                    $prev[$v] = $u;
+                    $queue[$v] = $alt;
                 }
             }
         }
 
-        return [];
+        $path = [];
+        $u = $end;
+
+        while ($prev[$u] !== null) {
+            array_unshift($path, $u);
+            $u = $prev[$u];
+        }
+
+        if ($dist[$end] === INF) {
+            return null; // No path found
+        }
+
+        array_unshift($path, $start);
+
+        return $path;
+    }
+
+    public function getGraph(){
+        return $this->graph;
+        
     }
 }
-?>

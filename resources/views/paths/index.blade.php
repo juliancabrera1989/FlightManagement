@@ -22,12 +22,22 @@
                 </select>
             </div>
             <!-- <div class="mb-3">
-                <label for="order">Order By</label>
-                <select name="order" id="order" class="form-control">
-                    <option value="distance">Distance</option>
-                    <option value="cost">Cost</option>
+                <label for="criteria">Order By</label>
+                <select name="criteria" id="criteria" class="form-control">
+                    <option value="distance">Shortest Distance</option>
+                    <option value="cost">Cheapest</option>
+                    <option value="time">Shortest Time</option>
                 </select>
             </div> -->
+            <div class="mb-3">
+                <label>Sort Criteria:</label><br>
+                <input type="checkbox" name="criteria[]" value="distance" id="distance">
+                <label for="distance">Distance</label><br>
+                <input type="checkbox" name="criteria[]" value="cost" id="cost">
+                <label for="cost">Cost</label><br>
+                <input type="checkbox" name="criteria[]" value="time" id="time">
+                <label for="time">Time</label><br>
+            </div>
             <button type="submit" class="btn btn-primary">Find Path</button>
         </form>
     </div>
