@@ -1,5 +1,6 @@
 <?php
 namespace App\Services;
+
 use App\Models\Flight;
 use App\Models\Airport;
 
@@ -19,7 +20,8 @@ class GraphService
         $flights = Flight::all();
 
         foreach ($flights as $flight) {
-            $this->graph[$flight->departure_airport_id][$flight->arrival_airport_id] = [
+            // 🔹 Agregamos [] al final para almacenar una lista de vuelos por tramo
+            $this->graph[$flight->departure_airport_id][$flight->arrival_airport_id][] = [
                 'distance' => $this->calculateDistance(
                     $flight->departureAirport->latitude,
                     $flight->departureAirport->longitude,
@@ -35,25 +37,19 @@ class GraphService
 
     public function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
-        // Radius of the earth in meters
         $earthRadius = 6371000;
 
-        // Convert degrees to radians
         $lat1 = deg2rad($lat1);
         $lon1 = deg2rad($lon1);
         $lat2 = deg2rad($lat2);
         $lon2 = deg2rad($lon2);
 
-        // Haversine formula
         $dlat = $lat2 - $lat1;
         $dlon = $lon2 - $lon1;
         $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
-        // Distance in meters
-        $distance = $earthRadius * $c;
-
-        return $distance;
+        return $earthRadius * $c;
     }
 
     public function dijkstra($start, $end, $criteria)
@@ -83,8 +79,16 @@ class GraphService
                 continue;
             }
 
-            foreach ($this->graph[$u] as $v => $details) {
-                $alt = $dist[$u] + $details[$criteria];
+            foreach ($this->graph[$u] as $v => $listOfFlights) {
+                // 🔹 Como ahora hay múltiples vuelos entre $u y $v, buscamos el mejor según el criterio
+                $bestFlightWeight = INF;
+                foreach ($listOfFlights as $flightDetails) {
+                    if ($flightDetails[$criteria] < $bestFlightWeight) {
+                        $bestFlightWeight = $flightDetails[$criteria];
+                    }
+                }
+
+                $alt = $dist[$u] + $bestFlightWeight;
 
                 if ($alt < $dist[$v]) {
                     $dist[$v] = $alt;
@@ -103,7 +107,7 @@ class GraphService
         }
 
         if ($dist[$end] === INF) {
-            return null; // No path found
+            return null; 
         }
 
         array_unshift($path, $start);
@@ -111,8 +115,93 @@ class GraphService
         return $path;
     }
 
+
+
+/**
+     * Punto de entrada para buscar TODOS los caminos posibles entre dos aeropuertos.
+     */
+    public function findAllPaths($start, $end)
+    {
+        $allPaths = [];
+        $visited = [];
+        
+        // 🔹 Inicializamos el recorrido con profundidad 0
+        $this->dfs($start, $end, $visited, [], $allPaths, null, 0);
+        
+        return $allPaths;
+    }
+
+    /**
+     * Algoritmo DFS recursivo con Backtracking, control de escala temporal y límite de profundidad.
+     */
+    protected function dfs($currentAirport, $destination, &$visited, $currentPathFlights, &$allPaths, $lastArrivalTime, $depth)
+    {
+        // 🔹 PODA DE CONTROL: Si ya lleva más de 3 vuelos conectados, cortamos la rama.
+        // Esto evita que el algoritmo explote analizando rutas infinitas de paseo.
+        if ($depth > 3) {
+            return;
+        }
+
+        if (isset($visited[$currentAirport]) && $visited[$currentAirport]) {
+            return;
+        }
+
+        if ($currentAirport == $destination) {
+            $allPaths[] = $currentPathFlights;
+            return;
+        }
+
+        $visited[$currentAirport] = true;
+
+        if (isset($this->graph[$currentAirport])) {
+            foreach ($this->graph[$currentAirport] as $nextAirport => $listOfFlights) {
+                foreach ($listOfFlights as $flightDetails) {
+                    
+                    $departureTime = strtotime($flightDetails['flight']->departure_time);
+                    $arrivalTime = strtotime($flightDetails['flight']->arrival_time);
+
+                    // Validación de escala temporal (mínimo 45 min, máximo 48 hs)
+                    if ($lastArrivalTime !== null) {
+                        $minScalesTime = $lastArrivalTime + (45 * 60); 
+                        if ($departureTime < $minScalesTime) {
+                            continue; 
+                        }
+                        
+                        $maxScalesTime = $lastArrivalTime + (48 * 60 * 60);
+                        if ($departureTime > $maxScalesTime) {
+                            continue; 
+                        }
+                    }
+
+                    $currentPathFlights[] = $flightDetails;
+                    
+                    // 🔹 LLAMADA RECURSIVA: Pasamos $depth + 1 para controlar las escalas
+                    $this->dfs(
+                        $nextAirport, 
+                        $destination, 
+                        $visited, 
+                        $currentPathFlights, 
+                        $allPaths, 
+                        $arrivalTime,
+                        $depth + 1 
+                    );
+
+                    array_pop($currentPathFlights);
+                }
+            }
+        }
+
+        $visited[$currentAirport] = false;
+    }
+
+
+
+    
     public function getGraph(){
         return $this->graph;
-        
     }
+
+
+
+
 }

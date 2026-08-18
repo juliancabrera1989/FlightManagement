@@ -21,39 +21,54 @@ class PathController extends Controller
 
     public function show(Request $request)
     {
+
+
+// 1. DIAGNÓSTICO: Ver si realmente Laravel ve vuelos en la base de datos
+    // $todosLosVuelos = \App\Models\Flight::all();
+    
+    // // Mostramos la cantidad de vuelos totales y los datos que llegaron del formulario
+    // dd([
+    //     'Cantidad total de vuelos en BD' => $todosLosVuelos->count(),
+    //     'Primeros 2 vuelos para ver estructura' => $todosLosVuelos->take(2)->toArray(),
+    //     'Datos del formulario recibidos' => $request->all()
+    // ]);
+
+
+
+
+
+        $searchType = $request->input('search_type', 'optimal');
+
+        // 🔹 CASO A: El usuario quiere explorar absolutamente TODAS las combinaciones con DFS
+        if ($searchType === 'all_alternative') {
+            $request->validate([
+                'departure_airport_id' => 'required|exists:airports,id',
+                'arrival_airport_id' => 'required|exists:airports,id',
+            ]);
+
+            $allPaths = $this->pathService->getAllAlternativePaths(
+                $request->departure_airport_id, 
+                $request->arrival_airport_id
+            );
+            
+            // Retornamos la nueva vista pasándole la colección de caminos del DFS
+            return view('paths.all', compact('allPaths'));
+        }
+
+        // 🔹 CASO B: Flujo tradicional de Dijkstra (Tu código original intacto)
         $request->validate([
             'departure_airport_id' => 'required|exists:airports,id',
             'arrival_airport_id' => 'required|exists:airports,id',
-            'criteria' =>'required|array|min:1',
+            'criteria' => 'required|array|min:1',
             'criteria.*' => 'in:distance,cost,time'
         ]);
 
-        echo "la solicitud enviada es ".$request."<br>";
-        echo "El ID del aeropuerto de salida es ".$request->departure_airport_id."<br>";
-        echo "El ID del aeropuerto de llegada es  ".$request->arrival_airport_id."<br>";
-        print_r($request->criteria);
-        echo "<br>"; 
+        $paths = $this->pathService->getPaths(
+            $request->departure_airport_id, 
+            $request->arrival_airport_id, 
+            $request->criteria
+        );
 
-        $paths = $this->pathService->getPaths($request->departure_airport_id, $request->arrival_airport_id, $request->criteria);
-
-        echo "Los caminos se mostraran a continuacion: <br>";
-        print_r($paths); 
-        echo "<br><br>";
-        echo "Y a continuacion se mostraran los caminos uno por uno: <br><br>";
-        // for($i=0; $i < sizeof($paths); $i++){
-        //     echo $paths[$i]."<br>";
-        // }
-
-        foreach($paths as $path){
-            foreach($path as $element){
-                print_r($element);
-                echo "<br>pipripripi";
-                echo "<br><br>";
-                echo "<br><br>";
-            }
-            echo "<br><br>";
-        }
         return view('paths.show', compact('paths'));
     }
 }
-?>

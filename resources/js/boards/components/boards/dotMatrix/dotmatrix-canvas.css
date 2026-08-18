@@ -1,0 +1,225 @@
+/* ==========================================================================
+   1. DOT MATRIX BOARD - MARCO CONTENEDOR (SKELETON FÍSICO)
+   ========================================================================== */
+.dm-board-container {
+  background: #0c0d0d;
+  padding: 25px 35px;
+  font-family: "Courier New", monospace;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.95), 0 10px 30px rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  border: 4px solid #1a1c1b;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Título de la terminal superior (DEPARTURES / ARRIVALS) */
+.dm-header-housing {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.dm-main-title {
+  color: #ffe600; /* Amarillo clásico de terminal industrial */
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(255, 230, 0, 0.3);
+}
+
+/* ==========================================================================
+   2. MARQUESINA DE COLUMNAS (Alineación con la Máscara Lógica)
+   ========================================================================== */
+.dm-marquee-labels {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 2px solid #1a1c1b;
+  margin-bottom: 12px;
+}
+
+.dm-label {
+  color: #737c77; /* Gris técnico apagado de chapas indicadoras */
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Distribución proporcional calibrada al mapa de bits del renderizador */
+.label-time {
+  width: 16%;
+}
+
+.label-destination {
+  width: 44%;
+}
+
+.label-flight {
+  width: 20%;
+}
+
+.label-remark {
+  width: 20%;
+  text-align: left;
+}
+
+/* ==========================================================================
+   3. CUERPO DE FILAS Y CANVAS
+   ========================================================================== */
+.dm-board-body {
+  background: #030404;
+  border: 2px solid #111312;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.dm-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Separación física uniforme entre tiras led */
+}
+
+/* Envoltura individual de cada fila led */
+.dm-canvas-row-wrapper {
+  background: #000000;
+  padding: 4px;
+  border-radius: 2px;
+  border-bottom: 1px solid #080909;
+}
+
+.dm-canvas-row-wrapper:last-child {
+  border-bottom: none;
+}
+
+/* Estilo estandarizado del elemento Canvas */
+.dm-flight-canvas {
+  background: #000000;
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated; /* Evita difuminados borrosos en el escalado de puntos */
+  
+  /* Efecto sutil de ghosting/brillo led heredado de tus filtros */
+  filter: drop-shadow(1px 1px 2px rgba(255, 230, 0, 0.08));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   MARQUESINA DE COLUMNAS (Alineación corregida y calibrada)
+   ========================================================================== */
+.dm-marquee-labels {
+  display: flex;
+  align-items: center;
+  /* Agregamos padding horizontal para emparejar con el contenedor del canvas */
+  padding: 8px 16px; 
+  border-bottom: 2px solid #1a1c1b;
+  margin-bottom: 12px;
+}
+
+.dm-label {
+  color: #737c77;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* NUEVOS ANCHOS DE MARQUESINA: 
+   Corremos FLIGHT a la derecha y le damos más aire al REMARK (Scheduled)
+*/
+.label-time {
+  width: 14%;       /* Achicamos un pelín el espacio del tiempo */
+}
+
+.label-destination {
+  width: 41%;       /* Espacio ideal para destinos largos de 14-15 caracteres */
+}
+
+.label-flight {
+  width: 23%;       /* Empuja el título FLIGHT más a la derecha, alineado al canvas */
+}
+
+.label-remark {
+  width: 22%;       /* Le da más porcentaje para cubrir la palabra SCHEDULED completa */
+  text-align: left;
+}
+
+/* ==========================================================================
+   CUERPO Y FILAS DEL TABLERO (Centrado y contención)
+   ========================================================================== */
+.dm-board-body {
+  background: #030404;
+  border: 2px solid #111312;
+  /* Aumentamos el padding interno horizontal de 12px a 16px 
+     Esto empuja el canvas hacia adentro evitando que 'SCHEDULED' toque el borde */
+  padding: 12px 16px; 
+  border-radius: 4px;
+}
+
+.dm-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-canvas-row-wrapper {
+  background: #000000;
+  padding: 4px 0; /* Limpiamos paddings laterales de la fila para que mande el contenedor principal */
+  border-bottom: 1px solid #080909;
+}
+
+
+
+
+
+
+/* ==========================================================================
+   3. CUERPO DE FILAS Y CANVAS (Modificado para contener el desborde)
+   ========================================================================== */
+.dm-board-body {
+  background: #030404;
+  border: 2px solid #111312;
+  padding: 12px 16px; 
+  border-radius: 4px;
+  
+  /* 🎯 CLAVE 1: Ocultamos cualquier píxel que intente salirse del mueble */
+  overflow: hidden; 
+}
+
+.dm-canvas-row-wrapper {
+  background: #000000;
+  padding: 4px 0; 
+  border-bottom: 1px solid #080909;
+  
+  /* 🎯 CLAVE 2: Aseguramos que la fila no se estire más que el contenedor padre */
+  max-width: 100%;
+  overflow: hidden; 
+}
+
+/* Estilo estandarizado del elemento Canvas */
+.dm-flight-canvas {
+  background: #000000;
+  display: block;
+  
+  /* 🎯 CLAVE 3: Forzamos al canvas a heredar el ancho máximo y encogerse si es necesario */
+  width: 100%;
+  max-width: 100%; 
+  height: auto;
+  
+  image-rendering: pixelated; 
+  filter: drop-shadow(1px 1px 2px rgba(255, 230, 0, 0.08));
+}

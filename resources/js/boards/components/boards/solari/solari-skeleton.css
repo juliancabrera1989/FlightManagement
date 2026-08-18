@@ -1,0 +1,280 @@
+
+
+/* ==========================================================================
+   1. EL MUEBLE EXTERIOR Y EL CARTEL PRINCIPAL (DEPARTURES)
+   ========================================================================== */
+.solari-housing {
+  background: #151817; /* Tono de chapa de hierro industrial */
+  border: 8px solid #242927;
+  border-radius: 6px;
+  padding: 25px;
+  box-shadow: 
+    inset 0 0 50px rgba(0, 0, 0, 0.95),
+    0 25px 50px rgba(0, 0, 0, 0.7);
+  display: inline-block;
+}
+
+/* ==========================================================================
+   2. LA MARQUESINA SUPERIOR (Chapa superior gris/verdosa con títulos fijos)
+   ========================================================================== */
+
+.solari-marquee {
+  display: flex;
+  background: #232826; /* Gris verdoso texturizado */
+  border-bottom: 3px solid #090b0a;
+  padding: 12px 30px;
+  margin-bottom: 10px;
+}
+
+.solari-marquee-label {
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #cdd5cc; /* Blanco tiza envejecido */
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.marquee-col {
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #a3aaa1;
+  letter-spacing: 3px;
+}
+
+/* Distribución exacta de los anchos de los títulos (Plaquetas + Márgenes) */
+.label-time    { width: 156px; } /* 4 celdas */
+.label-company { width: 228px; } /* 6 celdas */
+.label-to      { width: 444px; } /* 12 celdas */
+.label-flight  { flex-grow: 1; } /* 6 celdas finales */
+
+/* ==========================================================================
+   3. EL PANEL DE FONDO
+   ========================================================================== */
+.solari-board-static {
+  background: #070707; /* El negro absoluto que absorbe la luz detrás de las celdas */
+  padding: 10px 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   4. LAS FILAS Y LAS RANURAS FÍSICAS (Estructura interna vacía)
+   ========================================================================== */
+.solari-row-skeleton {
+  display: flex;
+  align-items: center;
+  height: 72px; /* Espaciado vertical estricto de cada fila */
+  border-bottom: 1px solid #141615; /* Sutil junta física entre módulos */
+}
+
+.solari-cell-skeleton {
+  position: relative;
+  width: 32px;  /* Relación de aspecto ultra esbelta y alta de la Foto 3 */
+  height: 68px; 
+  margin-right: 2px; /* Espacio mínimo milimétrico entre plaquetas */
+  background: #0d0e0f; /* Color negro mate del plástico PVC de los flaps vacíos */
+  border-radius: 2px;
+  
+  /* Sombra interna pesada para simular que el módulo está hundido en la ranura */
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.85); 
+}
+
+/* La bisagra física central negra (el eje horizontal mecánico del rodillo) */
+.solari-cell-skeleton::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 5;
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.05); /* Micro relieve metálico */
+}
+
+
+
+
+
+
+/* El gran letrero del aeropuerto superior */
+.solari-terminal-header {
+  background: #151817;
+  padding: 10px 0 25px 0;
+  text-align: center;
+}
+
+.solari-terminal-header h1 {
+  margin: 0;
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  font-size: 72px; /* Letras masivas de terminal de embarque */
+  font-weight: 800;
+  color: #b8c0b7; /* Color tiza / aluminio anodizado de las fotos */
+  letter-spacing: 18px; /* Gran espaciado entre caracteres */
+  text-transform: uppercase;
+  text-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+
+
+
+
+
+/* ==========================================================================
+   3. CUADRÍCULA Y BLOQUES DE CELDAS VACÍAS
+   ========================================================================== */
+.solari-board-static {
+  background: #050606;
+  padding: 15px 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.solari-row-skeleton {
+  display: flex;
+  align-items: center;
+  height: 76px; /* Ajustamos levemente la altura de la fila */
+  border-bottom: 1px solid #111312;
+}
+
+/* Estructura de los bloques de campos */
+.solari-block-skeleton {
+  display: flex;
+  align-items: center;
+}
+
+/* Separación real de pasillo entre columnas del mueble (Márgenes de las fotos) */
+.block-time    { margin-right: 20px; }
+.block-company { margin-right: 20px; }
+.block-to      { margin-right: 20px; }
+.block-flight  { margin-right: 0; }
+
+/* La ranura tridimensional de la plaqueta */
+.solari-cell-skeleton {
+  position: relative;
+  width: 32px;  
+  height: 68px; 
+  margin-right: 2px; /* Separación mínima entre plaquetas del mismo bloque */
+  background: #0a0b0c; 
+  border-radius: 2px;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9); 
+}
+
+/* El eje central mecánico */
+.solari-cell-skeleton::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 5;
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.04);
+}
+
+
+
+
+/* El divisor de los dos puntos impreso en el mueble */
+.solari-time-divider {
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #232826; /* Color de la chapa para que parezca un relieve del mueble */
+  width: 14px;
+  text-align: center;
+  line-height: 68px;
+  margin-right: 2px;
+}
+
+
+/* Anchos fijos exactos para la marquesina superior */
+.label-time   { width: 170px; } /* 4 celdas + divisor + margen */
+.label-to     { width: 428px; } /* 12 celdas + margen derecho */
+.label-flight { flex-grow: 1; } /* Toma el resto para la aerolínea y código */
+
+/* Pasillos de separación física del mueble */
+.block-time   { margin-right: 20px; }
+.block-to     { margin-right: 20px; } /* El pasillo divide TO de FLIGHT */
+.block-flight { margin-right: 0; }
+
+/* ==========================================================================
+   LA CELDA DEL LOGO (Módulo alargado del Tablero 2)
+   ========================================================================== */
+.solari-cell-logo {
+  position: relative;
+  /* Multiplicamos el ancho de una celda normal (32px) por aprox 5.5 + márgenes */
+  width: 180px; 
+  height: 68px;
+  margin-right: 6px; /* Un poco más de aire antes de las letras del código */
+  background: #0d0e0f; /* Plástico mate de fondo */
+  border-radius: 2px;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9);
+}
+
+/* También le dibujamos la bisagra horizontal en el medio para mantener la estética mecánica */
+.solari-cell-logo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 5;
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.04);
+}
+
+
+
+/* ==========================================================================
+   LA CELDA DEL LOGO (Módulo alargado blanco)
+   ========================================================================== */
+.solari-cell-logo {
+  position: relative;
+  width: 180px; 
+  height: 68px;
+  margin-right: 6px;
+  background: #e2e8e5; /* Blanco tiza/aluminio de los carteles de aerolíneas */
+  border-radius: 2px;
+  
+  /* Mantenemos el relieve hacia adentro para que parezca encastrado */
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.4); 
+  
+  /* Centrado absoluto para el logo que va a ir adentro */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Por si las dudas, nada se sale de la celda */
+}
+
+/* El eje central mecánico negro que pasa por encima del logo blanco */
+.solari-cell-logo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 5; /* Asegura que corte al logo a la mitad como en el flap real */
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   EL LOGO DE LA AEROLÍNEA (Control de tamaño con CSS)
+   ========================================================================== */
+.solari-cell-logo img {
+  /* Controlamos el tamaño máximo para que nunca desborde la celda */
+  max-width: 85%;  /* Deja un margen estético a los costados */
+  max-height: 75%; /* Deja un margen estético arriba y abajo */
+  
+  /* Truco de oro: mantiene la proporción original del logo sin deformarlo */
+  object-fit: contain; 
+  
+  /* Lo posicionamos por debajo de la línea negra de la bisagra */
+  z-index: 1; 
+}

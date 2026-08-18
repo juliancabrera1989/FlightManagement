@@ -1,0 +1,737 @@
+
+
+
+
+/* =========================
+   BOARD
+   ========================= */
+
+.solari-board{
+  background:#070707;
+  padding:20px 30px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  font-family:"Roboto Mono",monospace;
+}
+
+/* =========================
+   ROW
+   ========================= */
+
+.solari-row{
+  display:grid;
+
+  /* grid flexible para futuros bloques */
+  grid-auto-flow:column;
+  grid-auto-columns:max-content;
+
+  align-items:center;
+
+  height:72px;
+
+  border-bottom:1px solid #161616;
+}
+
+
+/* =========================
+   ROW (Debe copiar la física del esqueleto)
+   ========================= */
+.solari-row {
+  display: flex;       /* <-- CAMBIO CRÍTICO: De grid a flex */
+  align-items: center;
+  height: 76px;        /* <-- Altura idéntica al esqueleto */
+  border-bottom: 1px solid #111312; /* Junta física sutil */
+}
+/* =========================
+   BLOCKS
+   ========================= */
+
+.solari-block{
+  display:flex;
+  align-items:center;
+}
+
+.solari-time{
+  justify-content:center;
+  gap:4px;
+  margin-right:40px;
+}
+
+.solari-destination{
+  padding-left:25px;
+  gap:4px;
+}
+
+/* =========================
+   CELL
+   ========================= */
+
+.solari-cell{
+
+  position:relative;
+
+  width:46px;
+  height:64px;
+
+  perspective:600px;
+
+  margin-right:2px;
+
+}
+
+/* =========================
+   FLAPS
+   ========================= */
+
+.solari-flap{
+
+  position:absolute;
+
+  width:100%;
+  height:50%;
+
+  left:0;
+
+  background:#1a1b1e;
+
+  /* border removido para evitar gap entre flaps */
+  border:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  overflow:hidden;
+
+  backface-visibility:hidden;
+
+  will-change: transform;
+
+  box-shadow:
+  inset 0 6px 10px rgba(0,0,0,0.9),
+  inset 0 -6px 10px rgba(0,0,0,0.9);
+
+}
+
+/* =========================
+   CHARACTER
+   ========================= */
+
+.solari-flap span {
+
+  position:absolute;
+
+  top:0;
+  left:0;
+
+  width:100%;
+
+  height:64px;
+  line-height:64px;
+
+  text-align:center;
+
+  font-size:28px;
+
+  font-weight:600;
+
+  letter-spacing:-1px;
+
+  color:#f2f2f2;
+
+}
+
+/* =========================
+   TOP FLAP
+   ========================= */
+
+.solari-flap.top{
+
+  top:0;
+
+  transform-origin:bottom;
+
+}
+
+.solari-flap.top span{
+
+  transform:translateY(0);
+
+}
+
+/* =========================
+   BOTTOM FLAP
+   ========================= */
+
+.solari-flap.bottom{
+
+  bottom:0;
+
+  transform-origin:top;
+
+}
+
+.solari-flap.bottom span{
+
+  transform:translateY(-32px);
+
+}
+
+/* =========================
+   CENTER HINGE
+   ========================= */
+
+.solari-cell::after{
+
+  content:"";
+
+  position:absolute;
+
+  left:0;
+  right:0;
+
+  top:50%;
+
+  height:3px;
+
+  background:#050505;
+
+  box-shadow:
+  0 -1px 0 #333,
+  0 1px 0 #000;
+
+}
+
+/* =========================
+   FLIP ANIMATION
+   ========================= */
+
+.solari-cell.flip-top .solari-flap.top{
+
+  animation:flipTop .13s linear forwards;
+
+}
+
+.solari-cell.flip-bottom .solari-flap.bottom{
+
+  animation:flipBottom .13s linear forwards;
+
+}
+
+@keyframes flipTop{
+
+  from{
+    transform:rotateX(0deg);
+  }
+
+  to{
+    transform:rotateX(-90deg);
+  }
+
+}
+
+@keyframes flipBottom {
+  from {
+    transform: rotateX(90deg);
+    opacity: 0; /* Arranca invisible para que no se duplique con la que cae */
+  }
+  1% {
+    opacity: 1; /* Aparece instantáneamente en cuanto empieza a acostarse */
+  }
+  to {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+/* =========================
+   SHADOW DURING FLIP
+   ========================= */
+
+.solari-cell.flip-top .solari-flap.top{
+
+  box-shadow:
+  inset 0 8px 16px rgba(0,0,0,.95),
+  inset 0 -6px 12px rgba(0,0,0,.8);
+
+}
+
+.solari-cell.flip-bottom .solari-flap.bottom{
+
+  box-shadow:
+  inset 0 10px 16px rgba(0,0,0,.95),
+  inset 0 -4px 8px rgba(0,0,0,.7);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* REEMPLAZÁ ESTO: Modifica el tamaño de la celda para hacerla alta y delgada */
+.solari-cell {
+  position: relative;
+  width: 32px;  
+  height: 68px; 
+  perspective: 400px;
+  margin-right: 2px;
+  background: #050505;
+  display: inline-block;
+}
+
+
+
+
+/* REEMPLAZÁ ESTO: Da el degradado plástico y elimina los bordes blancos ficticios */
+.solari-flap {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  left: 0;
+  background: linear-gradient(to bottom, #151716 0%, #0b0c0c 100%);
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.solari-flap.top {
+  top: 0;
+  transform-origin: bottom;
+  border-radius: 2px 2px 0 0;
+}
+
+.solari-flap.bottom {
+  bottom: 0;
+  transform-origin: top;
+  border-radius: 0 0 2px 2px;
+}
+
+/* REEMPLAZÁ ESTO: Agranda la letra para que ocupe casi toda la plaqueta */
+.solari-flap span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 68px; 
+  text-align: center;
+  font-family: "Helvetica Neue", "Arial Condensed", sans-serif;
+  font-size: 46px; 
+  font-weight: 700;
+  color: #f5f7f6; 
+}
+
+.solari-flap.top span {
+  top: 0;
+  line-height: 68px;
+}
+
+.solari-flap.bottom span {
+  bottom: 0;
+  line-height: 68px;
+  transform: translateY(-34px); /* Ajustado a la nueva mitad de 68px */
+}
+
+/* REEMPLAZÁ ESTO: La bisagra central negra y profunda */
+.solari-cell::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 10;
+  box-shadow: 0 1px 1px rgba(255,255,255,0.08);
+}
+
+
+
+
+
+.solari-time {
+  justify-content: center;
+  gap: 4px;
+  margin-right: 20px; /* <-- Espacio para pasillo físico TIME-TO */
+}
+
+.solari-destination {
+  padding-left: 0;   /* <-- Limpiamos paddings viejos */
+  gap: 4px;
+  margin-right: 20px; /* <-- Espacio para pasillo físico TO-FLIGHT */
+}
+
+
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   CHARACTER (Corrección de Tipografía Deformada)
+   ========================================================================== */
+.solari-flap span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 68px; /* Altura total de la celda */
+  text-align: center;
+  
+  /* === EL CAMBIO CLAVE === */
+  /* Usamos fuentes del sistema 'Condensed' nativas */
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  
+  /* Ajuste fino del tamaño y peso */
+  font-size: 48px; /* Un poco más grande para llenar el ancho */
+  font-weight: 700; /* Negrita para que sea legible a distancia */
+  
+  color: #f5f7f6; /* Blanco cálido desgastado */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Sutil sombra para profundidad */
+  
+  /* Quitamos el letter-spacing negativo, no lo necesitamos */
+}
+
+.solari-flap.top span {
+  top: 0;
+  line-height: 68px;
+}
+
+.solari-flap.bottom span {
+  bottom: 0;
+  line-height: 68px;
+  /* Mitad exacta de 68px */
+  transform: translateY(-34px); 
+}
+
+
+
+
+
+
+
+/* Sombra interior profunda para el contenedor de plaquetas */
+.solari-board {
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+  padding: 20px 30px;
+}
+
+ 
+
+
+
+
+
+.solari-cell-logo {
+  position: relative;
+  width: 180px; 
+  height: 68px;
+  margin-right: 6px;
+  background: #e2e8e5; 
+  border-radius: 2px;
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.4); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; 
+}
+
+/* Control estricto para la imagen de la aerolínea */
+.solari-cell-logo img {
+  width: auto;
+  height: auto;
+  max-width: 80%;  /* No usa más del 80% del ancho de la celda */
+  max-height: 70%; /* No usa más del 70% del alto de la celda */
+  object-fit: contain; /* Mantiene la proporción original sin estirar */
+  z-index: 1; 
+  
+  /* Esto evita que el texto 'alt' rompa la grilla si la imagen no carga */
+  font-size: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+
+
+
+
+
+
+.solari-flap span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 68px; 
+  text-align: center;
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  
+  /* Ajustamos el tamaño a 42px para que no desborde el alto de 68px */
+  font-size: 42px; 
+  font-weight: 700;
+  color: #f5f7f6; 
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.solari-flap.top span {
+  top: 0;
+  /* Centrado vertical estricto para la mitad superior */
+  line-height: 68px; 
+}
+
+.solari-flap.bottom span {
+  bottom: 0;
+  line-height: 68px;
+  /* El desplazamiento debe ser la mitad exacta del font-size o la celda */
+  transform: translateY(-34px); 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* solaris.css */
+
+/* Reutilizamos los mismos keyframes de flipTop/flipBottom que ya tenés */
+
+.solari-logo-flap {
+  overflow: hidden; /* Importante para cortar la imagen a la mitad */
+}
+
+/* Alineamos las imágenes dentro de los flaps superiores e inferiores */
+.solari-logo-flap .solari-flap img {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%); /* Centrado horizontal */
+  max-width: 80%;
+  max-height: 70%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.solari-logo-flap .solari-flap.top img {
+  top: 50%;
+  transform: translate(-50%, -50%); /* Centrado vertical completo */
+}
+
+.solari-logo-flap .solari-flap.bottom img {
+  top: 0; /* Imagen pegada arriba del flap bottom */
+  transform: translate(-50%, -50%); /* La desplazamos la mitad hacia arriba para que coincida */
+}
+
+
+
+
+
+
+
+
+
+
+
+/*Lo de la M y W*/
+.solari-flap span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 68px; 
+  text-align: center;
+  
+  /* Volvemos a tu fuente original pero bajando el tamaño a un valor seguro */
+  font-family: "Helvetica Neue Condensed", "Arial Narrow", sans-serif;
+  font-size: 38px; 
+  font-weight: 700;
+  color: #f5f7f6; 
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  
+  /* Ajuste milimétrico para comprimir caracteres anchos */
+  letter-spacing: -2px; 
+}
+
+.solari-flap.top span {
+  top: 0;
+  line-height: 68px;
+}
+
+.solari-flap.bottom span {
+  bottom: 0;
+  line-height: 68px;
+  transform: translateY(-34px); /* Volvemos al desplazamiento limpio original */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   UNIFICACIÓN DE CELDAS VACÍAS (Para que mantengan el volumen físico)
+   ========================================================================== */
+
+/* 1. Hace que las celdas vacías del bucle midan exactamente lo mismo que las vivas */
+.solari-cell.cell-empty-black {
+  position: relative;
+  width: 32px;  
+  height: 68px; 
+  margin-right: 2px;
+  background: linear-gradient(to bottom, #151716 0%, #0b0c0c 100%) !important;
+  border-radius: 2px;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9);
+  display: inline-block;
+}
+
+/* 2. Le dibuja el eje central mecánico a las celdas vacías de descarte */
+.solari-cell.cell-empty-black::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 10;
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.04);
+}
+
+/* 3. Estabiliza el contenedor del logo vacío para que no colapse */
+.solari-cell-logo.logo-empty-black {
+  position: relative;
+  width: 180px; 
+  height: 68px;
+  margin-right: 6px;
+  background: linear-gradient(to bottom, #151716 0%, #0b0c0c 100%) !important;
+  border-radius: 2px;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9);
+  display: inline-block;
+}
+
+/* 4. Le dibuja la bisagra central al logo vacío */
+.solari-cell-logo.logo-empty-black::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #000000;
+  z-index: 10;
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.04);
+}
+
+
+
+
+
+/* ==========================================================================
+   ESTABILIZACIÓN DEL ESTADO BLACK EN CELDAS VIVAS
+   ========================================================================== */
+
+/* Cuando la celda viva pasa por el estado 'black', forzamos a sus flaps a mantener el volumen */
+.solari-cell.black .solari-flap {
+  background: linear-gradient(to bottom, #151716 0%, #0b0c0c 100%) !important;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Evitamos que el contenedor de la celda viva colapse visualmente en modo black */
+.solari-cell.black {
+  background: #050606 !important;
+}
+
+
+
+
+
+/* ==========================================================================
+   EFECTO GUILLOTINA PARA LOGOS COMPLETO (CORREGIDO FONDO BLANCO)
+   ========================================================================== */
+
+/* Contenedor principal del logo animado */
+.solari-cell-logo.solari-logo-flap {
+  perspective: 400px;
+  background: #e2e8e5 !important; /* Fondo claro de la estructura base */
+}
+
+/* Forzamos que las solapas internas del logo hereden el ancho completo de 180px y tengan fondo blanco */
+.solari-cell-logo.solari-logo-flap .solari-flap {
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  position: absolute;
+  /* 🎯 AQUÍ VOLVIÓ EL FONDO BLANCO: Para cuando el logo está activo */
+  background: linear-gradient(to bottom, #fcfdfd 0%, #e2e8e5 100%) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* === EXCEPCIÓN: Cuando el tablero pasa por el estado BLACK, apagamos el fondo del logo === */
+.solari-cell-logo.solari-logo-flap.black .solari-flap,
+.solari-cell-logo.logo-empty-black {
+  background: linear-gradient(to bottom, #151716 0%, #0b0c0c 100%) !important;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* La imagen dentro de las mitades */
+.solari-logo-split {
+  position: absolute;
+  left: 50%;
+  width: auto;
+  height: auto;
+  max-width: 80%;  
+  max-height: 140%; /* Permite que la imagen se estire verticalmente para recortarse bien */
+  object-fit: contain;
+}
+
+/* Posicionamiento exacto de la mitad superior */
+.solari-cell-logo.solari-logo-flap .solari-flap.top .solari-logo-split {
+  top: 100%; 
+  transform: translate(-50%, -50%); 
+}
+
+/* Posicionamiento exacto de la mitad inferior */
+.solari-cell-logo.solari-logo-flap .solari-flap.bottom .solari-logo-split {
+  top: 0; 
+  transform: translate(-50%, -50%); 
+}
+
+/* Animaciones del giro del logo (Sincronizado con las letras) */
+.solari-cell-logo.flip-top .solari-flap.top {
+  animation: flipTop .13s linear forwards;
+}
+
+.solari-cell-logo.flip-bottom .solari-flap.bottom {
+  animation: flipBottom .13s linear forwards;
+}

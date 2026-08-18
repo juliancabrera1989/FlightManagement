@@ -12,7 +12,20 @@ class Flight extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['airline_id', 'departure_airport_id', 'arrival_airport_id', 'flight_number', 'departure_time', 'arrival_time','ticket_cost'];
+    protected $fillable = [
+    'airline_id',
+    'departure_airport_id',
+    'arrival_airport_id',
+    'flight_number',
+    'departure_time',
+    'arrival_time',
+    'ticket_cost',
+    'gate',
+    'terminal',
+    'checkin_rows',
+    'status'
+];
+
 
 
     public function airline() { return $this->belongsTo(\App\Models\Airline::class); }

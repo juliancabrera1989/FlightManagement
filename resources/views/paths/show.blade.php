@@ -1,180 +1,192 @@
+{{-- paths.show.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h1>Path Details</h1>
-         @if($paths)
-         <div id="map" style="height: 100vh; width: 100%;"></div>
-          @foreach($paths as $criterion => $path)
-              @if($path)
-              <div class="path-details">
-                <h2>Sorted by {{ ucfirst($criterion) }}</h2>
-                <strong>Airports:</strong>
-                <ul>
-                    @foreach($path->airports as $airport)
-                        <li>{{ $airport->name }} ({{ $airport->code }})</li>
-                        <li>{{ $airport-> latitude }} , {{ $airport-> longitude }}</li>
-                    @endforeach
-                </ul>
-              </div>
-            <div>
-                <strong>Flights:</strong>
-                <ul>
-                    @foreach($path->flights as $flight)
-                        <li>{{ $flight->flight_number }}: {{ $flight->departureAirport->code }} - {{ $flight->arrivalAirport->code }}</li>
-                    @endforeach
-                </ul>
+<style>
+    .sim-overlay-container {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .radar-card {
+        pointer-events: auto;
+        width: 280px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-left: 6px solid #ccc;
+        transition: all 0.3s ease;
+    }
+    .radar-distance { border-left-color: #198754; color: #198754; }
+    .radar-time { border-left-color: #0d6efd; color: #0d6efd; }
+    .radar-cost { border-left-color: #dc3545; color: #dc3545; }
+
+    .solari-text {
+        font-size: 1.1rem;
+        background: #111;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    /* Estilo para el slider */
+    .speed-slider {
+        width: 200px;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container my-5">
+    <h1 class="mb-4 text-center">Flight Control Radar</h1>
+
+    @if($paths)
+        {{-- 🎛️ BOTONERA CON SLIDER DE PRECISIÓN --}}
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-4 mb-3 bg-dark text-white p-3 rounded shadow-sm">
+            <button onclick="reiniciarSimulacion()" class="btn btn-warning fw-bold px-4">
+                🔄 Reiniciar Radar
+            </button>
+            <div class="vr bg-secondary d-none d-md-block" style="height: 30px;"></div>
+            <div class="d-flex align-items-center gap-3">
+                <label for="slider-vel" class="form-label mb-0 fw-bold text-warning">🎚️ Control de Ritmo:</label>
+                <input type="range" class="form-range speed-slider" id="slider-vel" min="0.2" max="40" step="0.2" value="1" oninput="actualizarSliderVelocidad(this.value)">
+                <span class="badge bg-light text-dark fs-6 font-monospace px-3 py-2" style="min-width: 80px;">
+                    <span id="txt-velocidad">x1.0</span>
+                </span>
             </div>
-            <div>
-                <strong>Total Cost:</strong> ${{ $path->total_cost }}
-            </div>
-            <div>
-                <strong>Transhipments:</strong> {{ $path->transhipments }}
-            </div>
-            <div>
-                <strong>Final Arrival Time:</strong> {{ $path->final_arrival_time }}
-            </div>
-            <div>
-                  <strong>Total Distance:</strong> {{ number_format($path->total_distance / 1000, 2) }} km
-            </div>
-            <div>
-                  <strong>Total Time:</strong> {{ gmdate('H:i:s', $path->total_time * 60) }} (HH:MM:SS)
-                  <!-- <strong>Total Time:</strong> {{ $path->total_time }} -->
-            </div>
-         </div>
-         @endif
-        @endforeach
-       @else
-       <p>No paths found.</p>
-       @endif
-        <a href="{{ route('paths.index') }}" class="btn btn-primary">Back</a>
-    </div> 
+        </div>
 
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
-    <script type="text/javascript">
-     
-     
-     let pathsPrev1 = @json($paths);
-
-    var paths = [];
-    Object.values(pathsPrev1).forEach( path => {
-      paths.push(path);
-    });
-
-
-    function initialize() {
-
-      var map = new google.maps.Map(document.getElementById('map'));
-
-      var centerX;
-      var centerY;
-
-      var n = 0 ;
-      var x = 0;
-      var y = 0;
-      var latitude;
-      var longitude;
-      var i;
-      var planeR = [];
-
-      var animations = [];
-
-      paths.forEach( path => {
-        i = 0;
-        var flightPlanCoordinates = path.airports.map(airport => {
-          latitude = parseFloat(airport.latitude);
-          longitude = parseFloat(airport.longitude);
-          x += latitude;
-          y += longitude;
-
-          if(i != 0 && i != (path.airports.length-1))
-          {
-            planeR.push({lat: latitude, lng: longitude});
-            planeR.push({lat: latitude, lng: longitude});
-          }
-          else 
-          {
-            planeR.push({lat: latitude, lng: longitude});
-          }
-          i++;
-          return {lat: latitude, lng: longitude};
-        });
-
-        var flightPath = new google.maps.Polyline({
-          path: flightPlanCoordinates,
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-        });    
-
-        centerX = x/(flightPlanCoordinates.length);
-        centerY = y/(flightPlanCoordinates.length);
-        flightPath.setMap(map);
-
-       
-        var j = 0;
-        var lista = [];
-        animations.push(lista); 
-        while (j < planeR.length) {
-          lista.push(new google.maps.Marker({
-            position: planeR[j],
-            map: map,
-            icon: {
-              url: 'plane.png', // URL of your PNG image
-              scaledSize: new google.maps.Size(50, 50), // Adjust size as needed
-              anchor: new google.maps.Point(25,25)
-            }
-          }));
-
-          // console.log(path);
-          // console.log(path.flights[j/2]);
-          // console.log(path.flights[j/2].departure_time)
-          // console.log(path.flights[j/2].arrival_time);
-          // console.log(path.flights[j/2].duration);
-          // console.log(typeof(path.flights[j/2].departure_time))
-          // console.log(typeof(path.flights[j/2].arrival_time));
-          // console.log(path.total_time);
-          // console.log(path.flights[j/2].duration/path.total_time);
-          animateMarker(animations[n][j/2],{lat: planeR[j+0].lat, lng: planeR[j+0].lng},{lat: planeR[j+1].lat, lng: planeR[j+1].lng} , 5000);
-          j = j + 2;
-          // console.log(j);   
-        }
-     
-        planeR = [];
-        n++;
-      });
-
-      var mapOptions = {
-          zoom: 4,
-          center: new google.maps.LatLng(centerX, centerY),
-          mapTypeId: google.maps.MapTypeId.TERRAIN
-      };
-
-      map.setOptions(mapOptions);
-
-      function animateMarker(marker, startPos, endPos, duration) {
-          const steps = 100; // Number of steps in the animation
-          const stepDuration = duration / steps;
-          let step = 0;
-
-          animationInterval = setInterval(() => {
-            if (step >= steps) {
-                step=0;
-            }
-
-            const fraction = step / steps; 
-            const currentPos = google.maps.geometry.spherical.interpolate(startPos, endPos, fraction);  
+        <div class="position-relative">
+            <div id="map" style="height: 60vh; width: 100%;" class="mb-5 rounded shadow"></div>
             
-            marker.setPosition(currentPos);
-            // console.log(marker);
-            step++;
-          }, stepDuration);
-      }
+            <div class="sim-overlay-container">
+                @if(isset($paths['distance']) && $paths['distance'])
+                <div id="overlay-distance" class="radar-card radar-distance">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>🟢 RADAR: DISTANCE</span>
+                        <small class="badge bg-success text-white">ACTIVE</small>
+                    </div>
+                    <hr class="my-1 border-success">
+                    <div class="small text-dark">
+                        <div>⏱️ SIM TIME: <span id="clock-distance">--:--:--</span></div>
+                        <div class="my-1">STATUS: <span id="status-distance" class="solari-text" style="color: #198754;">IDLE</span></div>
+                        <div>📊 PROG: <span id="prog-distance">0</span> / <span id="total-distance-val">{{ number_format($paths['distance']->total_distance / 1000, 2) }}</span> km</div>
+                    </div>
+                </div>
+                @endif
 
-    } 
+                @if(isset($paths['time']) && $paths['time'])
+                <div id="overlay-time" class="radar-card radar-time">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>🔵 RADAR: TIME</span>
+                        <small class="badge bg-primary text-white">ACTIVE</small>
+                    </div>
+                    <hr class="my-1 border-primary">
+                    <div class="small text-dark">
+                        <div>⏱️ SIM TIME: <span id="clock-time">--:--:--</span></div>
+                        <div class="my-1">STATUS: <span id="status-time" class="solari-text" style="color: #0d6efd;">IDLE</span></div>
+                        <div>📊 PROG: <span id="prog-time">--:--</span> / <span id="total-time-val">{{ gmdate('H:i', $paths['time']->total_time * 60) }}</span> hrs</div>
+                    </div>
+                </div>
+                @endif
 
-google.maps.event.addDomListener(window, 'load', initialize);
+                @if(isset($paths['cost']) && $paths['cost'])
+                <div id="overlay-cost" class="radar-card radar-cost">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>🔴 RADAR: COST</span>
+                        <small class="badge bg-danger text-white">ACTIVE</small>
+                    </div>
+                    <hr class="my-1 border-danger">
+                    <div class="small text-dark">
+                        <div>⏱️ SIM TIME: <span id="clock-cost">--:--:--</span></div>
+                        <div class="my-1">STATUS: <span id="status-cost" class="solari-text" style="color: #dc3545;">IDLE</span></div>
+                        <div>💰 BUDGET: $<span id="prog-cost">0</span> / $<span id="total-cost-val">{{ $paths['cost']->total_cost }}</span></div>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
 
-    </script>
-@endsection  
+        {{-- Código Blade de contingencia e info (Se mantiene igual) --}}
+        @php
+            $uniquePaths = [];
+            foreach ($paths as $criterion => $path) {
+                if ($path) {
+                    $flightSignature = $path->flights->pluck('id')->implode('-');
+                    if (!isset($uniquePaths[$flightSignature])) {
+                        $uniquePaths[$flightSignature] = ['path' => $path, 'criteria' => []];
+                    }
+                    $uniquePaths[$flightSignature]['criteria'][] = $criterion;
+                }
+            }
+        @endphp
+
+        @foreach($uniquePaths as $item)
+            @php 
+                $path = $item['path']; 
+                $criteriaGroup = $item['criteria'];
+            @endphp
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        @foreach($criteriaGroup as $index => $crit)
+                            Sorted by {{ ucfirst($crit) }}{{ $index < count($criteriaGroup) - 1 ? ' & ' : '' }}
+                        @endforeach
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Airports</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        @foreach($path->airports as $airport)
+                            <li class="list-group-item">
+                                <strong>{{ $airport->name }}</strong> ({{ $airport->code }}) <br>
+                                <small class="text-muted">Lat: {{ $airport->latitude }}, Lng: {{ $airport->longitude }}</small>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endforeach
+    @else
+        <p class="alert alert-warning">No paths found.</p>
+    @endif
+</div>
+
+{{-- API Externa de Google Maps --}}
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=geometry"></script>
+
+{{-- Inyección modular e inteligente de los módulos mediante Vite --}}
+@vite([
+    'resources/js/simulador/google-maps-helper.js',
+    'resources/js/simulador/flight-animator.js'
+])
+
+{{-- Orquestador local nativo --}}
+<script type="text/javascript">
+    // Convertimos de forma segura la variable de Laravel a JSON para Javascript
+    const rawPathsData = @json($paths);
+
+    /**
+     * Inicializador gatillado automáticamente por el DomListener de Google
+     */
+    function initialize() {
+        // 1. Procesamos datos y variables estructurales del radar
+        window.prepararSimulacion(rawPathsData);
+
+        // 2. Montamos la instancia física en el contenedor HTML
+        window.googleMapInstance = new google.maps.Map(document.getElementById('map'));
+        
+        // 3. Encendemos el motor de simulación gráfica cuadro por cuadro
+        window.ejecutarSimulacion(window.googleMapInstance);
+    }
+
+    // Escuchamos la carga completa de la ventana para disparar la inicialización
+    google.maps.event.addDomListener(window, 'load', initialize);
+</script>
