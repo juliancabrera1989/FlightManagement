@@ -1,19 +1,106 @@
 import { updateStatusUI } from './ui-updater';
 import { animateMarker } from './marker-mover';
 
+// Estado global
+window.multiplicadorVelocidad = window.multiplicadorVelocidad || 1;
+window.simulacionPausada = false;
+window.tiempoSimulacionActual = null;
+
+// Normalización de fechas para evitar desfases por zona horaria local (UTC)
+function parseFechaUTC(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    // Si viene en formato "YYYY-MM-DD HH:mm" o ISO
+    return new Date(dateStr.replace(' ', 'T') + (dateStr.includes('Z') ? '' : 'Z'));
+}
+
 /**
- * Limpia todos los procesos activos y resetea los radares
+ * 1. RELOJ MAESTRO UNIFICADO
+ */
+function iniciarRelojGlobal() {
+    if (!window.earliest_departure_time || !window.latest_arrival_time) return;
+
+    // Forzamos la simulación a iniciar exactamente en UTC
+    const tInicio = parseFechaUTC(window.earliest_departure_time);
+    const tFin = parseFechaUTC(window.latest_arrival_time);
+
+    window.tiempoSimulacionActual = new Date(tInicio.getTime());
+    const clockGlobalEl = document.getElementById('global-sim-clock');
+
+    const tickIntervalMs = 20; // 50 FPS
+
+    let globalInterval = setInterval(() => {
+        if (window.simulacionPausada) return;
+
+        if (window.tiempoSimulacionActual >= tFin) {
+            window.tiempoSimulacionActual = new Date(tFin.getTime());
+            actualizarUIRelojes(tInicio.getTime(), clockGlobalEl);
+            clearInterval(globalInterval);
+            return;
+        }
+
+        // 1 hora simulada por cada 1000ms reales (a velocidad x1.0)
+        let avanceMs = (tickIntervalMs / 1000) * 3600000 * window.multiplicadorVelocidad;
+        window.tiempoSimulacionActual = new Date(window.tiempoSimulacionActual.getTime() + avanceMs);
+
+        actualizarUIRelojes(tInicio.getTime(), clockGlobalEl);
+    }, tickIntervalMs);
+
+    window.todosLosIntervalos.push(globalInterval);
+}
+
+function actualizarUIRelojes(inicioMs, clockGlobalEl) {
+    if (!window.tiempoSimulacionActual) return;
+
+    // Formateo estricto UTC para que coincida con los itinerarios de la DB
+    const isoStr = window.tiempoSimulacionActual.toISOString();
+    const fechaFormat = isoStr.split('T')[0];
+    const horaFormat = isoStr.split('T')[1].split('.')[0];
+
+    const dateEl = document.getElementById('global-sim-date');
+    if (dateEl) {
+        dateEl.innerText = fechaFormat;
+        if (clockGlobalEl) clockGlobalEl.innerText = horaFormat;
+    } else if (clockGlobalEl) {
+        clockGlobalEl.innerText = `${fechaFormat} ${horaFormat}`;
+    }
+
+    const elapsedEl = document.getElementById('global-sim-elapsed');
+    if (elapsedEl) {
+        let diffMs = window.tiempoSimulacionActual.getTime() - inicioMs;
+        let diffSeg = Math.floor(diffMs / 1000);
+        let hrs = String(Math.floor(diffSeg / 3600)).padStart(2, '0');
+        let mins = String(Math.floor((diffSeg % 3600) / 60)).padStart(2, '0');
+        let secs = String(diffSeg % 60).padStart(2, '0');
+        elapsedEl.innerText = `${hrs}:${mins}:${secs}`;
+    }
+}
+
+/**
+ * 2. BOTONES Y CONTROLES
  */
 window.reiniciarSimulacion = function() {
     window.todosLosIntervalos.forEach(clearInterval);
     window.todosLosTimeouts.forEach(clearTimeout);
     window.todosLosIntervalos = [];
     window.todosLosTimeouts = [];
+
     window.todosLosMarcadores.forEach(m => m.setMap(null));
     window.todosLosMarcadores = [];
     window.todasLasPolilynesRastro.forEach(p => p.setMap(null));
     window.todasLasPolilynesRastro = [];
     window.avionesActivosEnSimulacion = {};
+
+    window.simulacionPausada = false;
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    if (btnPlayPause) {
+        btnPlayPause.innerHTML = '⏸️ Pausar';
+        btnPlayPause.className = 'btn btn-primary fw-bold';
+    }
+
+    if (window.controlCicloDijkstra) {
+        window.controlCicloDijkstra.criteriosFinalizados = [];
+    }
 
     ['distance', 'time', 'cost'].forEach(crit => {
         if(document.getElementById(`clock-${crit}`)) document.getElementById(`clock-${crit}`).innerText = "--:--:--";
@@ -26,13 +113,43 @@ window.reiniciarSimulacion = function() {
     }
 };
 
+window.togglePausaSimulacion = function() {
+    window.simulacionPausada = !window.simulacionPausada;
+    const btn = document.getElementById('btn-play-pause');
+    if (btn) {
+        btn.innerHTML = window.simulacionPausada ? '▶️ Reanudar' : '⏸️ Pausar';
+        btn.className = window.simulacionPausada ? 'btn btn-success fw-bold' : 'btn btn-primary fw-bold';
+    }
+};
+
+window.actualizarSliderVelocidad = function(val) {
+    window.multiplicadorVelocidad = parseFloat(val);
+    const txt = document.getElementById('txt-velocidad');
+    if (txt) txt.innerText = `x${parseFloat(val).toFixed(1)}`;
+};
+
+window.avanzarPasoPaso = function() {
+    if (!window.simulacionPausada) {
+        window.togglePausaSimulacion();
+    }
+    if (window.tiempoSimulacionActual) {
+        window.tiempoSimulacionActual = new Date(window.tiempoSimulacionActual.getTime() + (10 * 60000));
+        const clockGlobalEl = document.getElementById('global-sim-clock');
+        if (window.earliest_departure_time) {
+            actualizarUIRelojes(parseFechaUTC(window.earliest_departure_time).getTime(), clockGlobalEl);
+        }
+    }
+};
+
 /**
- * Motor de despacho y control de escalas/vuelos
+ * 3. CONTROLADOR DE TRAMOS Y ANIMACIONES
  */
 window.ejecutarSimulacion = function(map) {
     var centerX = 0, centerY = 0;
     var totalAirportsCount = 0;
     window.avionesActivosEnSimulacion = {};
+
+    iniciarRelojGlobal();
 
     window.paths.forEach(path => {
         let localPlaneR = [];
@@ -53,16 +170,11 @@ window.ejecutarSimulacion = function(map) {
             return new google.maps.LatLng(latitude, longitude);
         });
 
-        let flightDurations = [];
-        let flightDelays = [];
         let listaAnimacion = []; 
         let pathVuelosData = [];
-        let endDelay = 3000;
         let flightsCount = path.flights.length;
         
         if (flightsCount === 1) {
-            flightDurations.push(path.flights[0].duration * 5);
-            flightDelays.push(((new Date(path.flights[0].departure_time).getTime()) - window.earliest_departure_time.getTime()) / 60000 * 5);
             if (flightPlanCoordinates[1]) {
                 listaAnimacion.push([flightPlanCoordinates[0], flightPlanCoordinates[1]]);
             }
@@ -75,14 +187,6 @@ window.ejecutarSimulacion = function(map) {
                 let flightObj = path.flights[currentFlightIdx];
                 if (!flightObj) break;
 
-                flightDurations.push(flightObj.duration * 5);
-                if(currentFlightIdx !== 0) {
-                    let prevFlightObj = path.flights[currentFlightIdx - 1];
-                    flightDelays.push(((new Date(flightObj.departure_time).getTime()) - new Date(prevFlightObj.arrival_time).getTime()) / 60000 * 5);
-                } else {
-                    flightDelays.push(((new Date(path.flights[0].departure_time).getTime()) - window.earliest_departure_time.getTime()) / 60000 * 5);
-                }
-                
                 if (localPlaneR[jLocal + 0] && localPlaneR[jLocal + 1]) {
                     listaAnimacion.push([
                         new google.maps.LatLng(localPlaneR[jLocal + 0].lat, localPlaneR[jLocal + 0].lng),
@@ -94,7 +198,7 @@ window.ejecutarSimulacion = function(map) {
             }
         }
 
-        animateMarkers(listaAnimacion, flightDurations, flightDelays, endDelay, path.criterion, pathVuelosData);
+        animateMarkers(listaAnimacion, path.criterion, pathVuelosData);
     });
 
     if (totalAirportsCount > 0) {
@@ -102,9 +206,10 @@ window.ejecutarSimulacion = function(map) {
     }
     map.setOptions({ zoom: 2, center: new google.maps.LatLng(centerX, centerY), mapTypeId: google.maps.MapTypeId.TERRAIN });
       
-    function animateMarkers(tramosCoords, durations, delays, endDelay, crit, vuelosData) {
+    function animateMarkers(tramosCoords, crit, vuelosData) {
         let currentPathIndex = 0;
         let acumuladoCriterio = 0; 
+        let estaVolando = false;
 
         let prioridadCapa = 10;
         if (crit === 'time') prioridadCapa = 20;
@@ -115,88 +220,61 @@ window.ejecutarSimulacion = function(map) {
         });
         window.todasLasPolilynesRastro.push(polylineRastro);
 
-        function animateNextMarker() {
-            if (currentPathIndex < tramosCoords.length) {
-                const originCoords = tramosCoords[currentPathIndex][0];
-                const destCoords = tramosCoords[currentPathIndex][1];
-                const infoVuelo = vuelosData[currentPathIndex];
+        // Bucle de sincronización sincronizado con el Reloj Global
+        let syncLoop = setInterval(() => {
+            if (window.simulacionPausada || estaVolando) return;
 
-                let duration = durations[currentPathIndex] / window.multiplicadorVelocidad;
-                let delay = delays[currentPathIndex] / window.multiplicadorVelocidad;
-
-                let minutosEspera = (delays[currentPathIndex] / 5); 
-                let mContados = 0;
-                updateStatusUI(crit, currentPathIndex === 0 ? "IDLE" : "LAYOVER");
-
-                let waitingInterval = setInterval(() => {
-                    if(mContados >= minutosEspera) {
-                        clearInterval(waitingInterval);
-                    } else {
-                        let dateCursor = new Date(window.earliest_departure_time.getTime() + (mContados * 60000));
-                        if (currentPathIndex > 0) {
-                            let finArriboPrevio = new Date(vuelosData[currentPathIndex-1].arrival_time).getTime();
-                            dateCursor = new Date(finArriboPrevio + (mContados * 60000));
-                        }
-                        updateStatusUI(crit, currentPathIndex === 0 ? "IDLE" : "LAYOVER", dateCursor.toTimeString().split(' ')[0]);
-                        mContados += (10 * window.multiplicadorVelocidad); 
-                    }
-                }, 20);
-                window.todosLosIntervalos.push(waitingInterval);
-
-                let delayTimeout = setTimeout(() => {
-                    clearInterval(waitingInterval);
-                    updateStatusUI(crit, "FLYING");
-
-                    // Invocamos la animación física del módulo marker-mover
-                    animateMarker(map, originCoords, destCoords, duration, crit, infoVuelo, acumuladoCriterio, polylineRastro, (valorFinalTramo) => {
-                        acumuladoCriterio = valorFinalTramo;
-                        currentPathIndex++;
-                        animateNextMarker();
-                    });
-                }, delay);
-                window.todosLosTimeouts.push(delayTimeout);
-
-
-                
-            // } else {
-            //     updateStatusUI(crit, "ARRIVED");
-            //     let endTimeout = setTimeout(()=>{
-            //         acumuladoCriterio = 0;
-            //         currentPathIndex = 0;
-            //         polylineRastro.setPath([]); 
-            //         animateNextMarker();
-            //     }, endDelay / window.multiplicadorVelocidad);
-            //     window.todosLosTimeouts.push(endTimeout);
-            // }
-            } else {
-                // El avión llegó a su destino final
+            if (currentPathIndex >= tramosCoords.length) {
+                clearInterval(syncLoop);
                 updateStatusUI(crit, "ARRIVED");
 
-                // 🌟 BARRERA DE CONTROL CENTRAL
                 if (!window.controlCicloDijkstra.criteriosFinalizados.includes(crit)) {
                     window.controlCicloDijkstra.criteriosFinalizados.push(crit);
                 }
 
-                // ¿Ya llegaron absolutamente todos los criterios a sus metas?
-                const todosLlegaron = window.controlCicloDijkstra.criteriosFinalizados.length === window.controlCicloDijkstra.criteriosActivos.length;
-
-                if (todosLlegaron) {
-                    // Esperamos 3 segundos con la pantalla estática compartida y reiniciamos TODO junto
-                    let endTimeout = setTimeout(() => {
-                        window.controlCicloDijkstra.criteriosFinalizados = [];
-                        
-                        // En lugar de dar vuelta individualmente, gatillamos el reinicio absoluto del motor limpio
-                        if (window.reiniciarSimulacion) {
-                            window.reiniciarSimulacion();
-                        }
-                    }, endDelay / window.multiplicadorVelocidad);
-                    window.todosLosTimeouts.push(endTimeout);
-                } else {
-                    // Quedamos en modo espera (IDLE/WAIT) avisando en el radar que este criterio ya cumplió
-                    updateStatusUI(crit, "WAITING OTHERS");
+                if (window.controlCicloDijkstra.criteriosFinalizados.length === window.controlCicloDijkstra.criteriosActivos.length) {
+                    setTimeout(() => {
+                        if (window.reiniciarSimulacion) window.reiniciarSimulacion();
+                    }, 3000 / window.multiplicadorVelocidad);
                 }
+                return;
             }
-        }
-        animateNextMarker();
+
+            const infoVuelo = vuelosData[currentPathIndex];
+            const tSalidaVuelo = parseFechaUTC(infoVuelo.departure_time).getTime();
+            const tLlegadaVuelo = parseFechaUTC(infoVuelo.arrival_time).getTime();
+            const tActual = window.tiempoSimulacionActual ? window.tiempoSimulacionActual.getTime() : 0;
+
+            // 1. Sincronizar el reloj del Radar con el Reloj Global Maestro
+            const clockEl = document.getElementById(`clock-${crit}`);
+            if (clockEl && window.tiempoSimulacionActual) {
+                clockEl.innerText = window.tiempoSimulacionActual.toISOString().split('T')[1].split('.')[0];
+            }
+
+            // 2. Control del Estado
+            if (tActual < tSalidaVuelo) {
+                // Todavía no es hora de salir
+                updateStatusUI(crit, currentPathIndex === 0 ? "IDLE" : "LAYOVER");
+            } 
+            else if (tActual >= tSalidaVuelo && !estaVolando) {
+                // Llegó la hora exacta del despegue: Iniciar Vuelo
+                estaVolando = true;
+                updateStatusUI(crit, "FLYING");
+
+                const originCoords = tramosCoords[currentPathIndex][0];
+                const destCoords = tramosCoords[currentPathIndex][1];
+
+                // Calcular duración exacta de la animación según el tiempo de vuelo real
+                let duracionSimuladaMs = (tLlegadaVuelo - tSalidaVuelo) / 3600000 * 1000 / window.multiplicadorVelocidad;
+
+                animateMarker(map, originCoords, destCoords, duracionSimuladaMs, crit, infoVuelo, acumuladoCriterio, polylineRastro, (valorFinalTramo) => {
+                    acumuladoCriterio = valorFinalTramo;
+                    currentPathIndex++;
+                    estaVolando = false; // Permite que el syncLoop maneje la escala o el siguiente tramo
+                });
+            }
+        }, 50);
+
+        window.todosLosIntervalos.push(syncLoop);
     }
 };

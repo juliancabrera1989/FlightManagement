@@ -14,8 +14,9 @@ class Path
     public $final_arrival_time;
     public $total_distance;
     public $total_time;
+    public $first_departure_time;
 
-    public function __construct($airports, $flights, $total_cost, $transhipments, $final_arrival_time, $total_distance,$total_time)
+    public function __construct($airports, $flights, $total_cost, $transhipments, $final_arrival_time, $total_distance, $total_time, $first_departure_time = null)
     {
         $this->airports = $airports;
         $this->flights = $flights;
@@ -24,7 +25,6 @@ class Path
         $this->final_arrival_time = $final_arrival_time;
         $this->total_distance = $total_distance;
         $this->total_time = $total_time;
+        $this->first_departure_time = $first_departure_time;
     }
 }
-
-?>

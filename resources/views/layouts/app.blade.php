@@ -11,12 +11,7 @@
     </script>
     <style>
         /* --- Navbar Styling --- */
-        /* .navbar {
-            background: linear-gradient(90deg, #003366, #0055aa);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        } */
-
-        
+     
        .navbar:not(.bg-dark) {
        background: linear-gradient(90deg, #003366, #0055aa);
        transition: background-color 0.3s ease, box-shadow 0.3s ease;

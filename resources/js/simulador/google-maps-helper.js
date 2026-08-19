@@ -18,23 +18,23 @@ window.googleMapInstance = null;
 window.tramosGlobalesCompartidos = {}; 
 window.avionesActivosEnSimulacion = {};
 
-/**
- * Procesa el JSON crudo enviado por Laravel para calcular 
- * los desfases de tiempo y los tramos físicos compartidos.
- */
-
-
-// 🌟 NUEVO: Control central de sincronización de ciclos para Dijkstra
+// Control central de sincronización de ciclos para Dijkstra
 window.controlCicloDijkstra = {
     criteriosActivos: [],
     criteriosFinalizados: []
 };
 
-
-
 window.prepararSimulacion = function(rawPathsData) {
     const A = 0;
     let B;
+
+    // Reset de estructuras base para evitar acumulación al re-inicializar
+    window.paths = [];
+    window.tramosGlobalesCompartidos = {};
+    window.controlCicloDijkstra.criteriosActivos = [];
+    window.controlCicloDijkstra.criteriosFinalizados = [];
+    window.earliest_departure_time = undefined;
+    window.latest_arrival_time = undefined;
 
     Object.entries(rawPathsData).forEach(([criterion, path]) => {
         if (!path) return; 
@@ -68,8 +68,10 @@ window.prepararSimulacion = function(rawPathsData) {
             }
         });
 
-        // 🌟 NUEVO: Guardamos el criterio en la lista de activos
-        window.controlCicloDijkstra.criteriosActivos.push(criterion);
+        // Guardamos el criterio en la lista de activos
+        if (!window.controlCicloDijkstra.criteriosActivos.includes(criterion)) {
+            window.controlCicloDijkstra.criteriosActivos.push(criterion);
+        }
     });
 };
 

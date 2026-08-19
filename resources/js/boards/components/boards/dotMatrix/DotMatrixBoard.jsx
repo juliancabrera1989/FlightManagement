@@ -50,9 +50,6 @@ useEffect(() => {
 
 
 
-
-
-
   /* -------------------- INIT RENDERERS -------------------- */
   function initRenderer(i, el) {
     if (!el) return;
@@ -132,67 +129,6 @@ useEffect(() => {
     }
   }
 
-  /* -------------------- RENDER -------------------- */
-  // return (
-  //   <div className="dm-canvas-wrapper" style={{ background: "#000", padding: 12 }}>
-  //     <div className="dm-header">{title}</div>
-
-  //     <div className="dm-rows">
-  //       {Array.from({ length: visibleCount }).map((_, i) => (
-  //         <canvas
-  //           key={i}
-  //           ref={(el) => {
-  //             canvasesRef.current[i] = el;
-  //             if (el) initRenderer(i, el);
-  //           }}
-  //           style={{ display: "block", marginBottom: 8 }}
-  //         />
-  //       ))}
-  //     </div>
-  //   </div>
-  // );
-
-
-
-
-
-
-
-  // return (
-  //   <div className="dm-board-container">
-  //     {/* MUEBLE SUPERIOR / CARTEL PRINCIPAL */}
-  //     <div className="dm-header-housing">
-  //       <h1 className="dm-main-title">{title}</h1>
-  //     </div>
-
-  //     {/* MARQUESINA DE COLUMNAS (SKELETON) */ }
-  //     <div className="dm-marquee-labels">
-  //       <div className="dm-label label-time">TIME</div>
-  //       <div className="dm-label label-destination">
-  //         {direction?.toLowerCase().startsWith("dep") ? "DESTINATION" : "ORIGIN"}
-  //       </div>
-  //       <div className="dm-label label-flight">FLIGHT</div>
-  //       <div className="dm-label label-remark">REMARK</div>
-  //     </div>
-
-  //     {/* CUERPO CENTRAL DEL TABLERO */}
-  //     <div className="dm-board-body">
-  //       <div className="dm-rows-container">
-  //         {Array.from({ length: visibleCount }).map((_, i) => (
-  //           <div key={i} className="dm-canvas-row-wrapper">
-  //             <canvas
-  //               ref={(el) => {
-  //                 canvasesRef.current[i] = el;
-  //                 if (el) initRenderer(i, el);
-  //               }}
-  //               className="dm-flight-canvas"
-  //             />
-  //           </div>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 
 
 /* -------------------- RENDER -------------------- */

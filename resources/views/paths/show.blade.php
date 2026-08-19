@@ -15,7 +15,7 @@
     }
     .radar-card {
         pointer-events: auto;
-        width: 280px;
+        width: 290px;
         background: rgba(255, 255, 255, 0.95);
         border-radius: 8px;
         padding: 12px;
@@ -30,16 +30,15 @@
     .radar-cost { border-left-color: #dc3545; color: #dc3545; }
 
     .solari-text {
-        font-size: 1.1rem;
+        font-size: 1rem;
         background: #111;
         color: #fff;
         padding: 2px 6px;
         border-radius: 4px;
         text-align: center;
     }
-    /* Estilo para el slider */
     .speed-slider {
-        width: 200px;
+        width: 180px;
         cursor: pointer;
     }
 </style>
@@ -48,24 +47,53 @@
     <h1 class="mb-4 text-center">Flight Control Radar</h1>
 
     @if($paths)
-        {{-- 🎛️ BOTONERA CON SLIDER DE PRECISIÓN --}}
-        <div class="d-flex flex-wrap justify-content-center align-items-center gap-4 mb-3 bg-dark text-white p-3 rounded shadow-sm">
-            <button onclick="reiniciarSimulacion()" class="btn btn-warning fw-bold px-4">
-                🔄 Reiniciar Radar
-            </button>
-            <div class="vr bg-secondary d-none d-md-block" style="height: 30px;"></div>
-            <div class="d-flex align-items-center gap-3">
-                <label for="slider-vel" class="form-label mb-0 fw-bold text-warning">🎚️ Control de Ritmo:</label>
-                <input type="range" class="form-range speed-slider" id="slider-vel" min="0.2" max="40" step="0.2" value="1" oninput="actualizarSliderVelocidad(this.value)">
-                <span class="badge bg-light text-dark fs-6 font-monospace px-3 py-2" style="min-width: 80px;">
-                    <span id="txt-velocidad">x1.0</span>
-                </span>
+<!-- BANNER Y CONTROLES DE LA SIMULACIÓN -->
+<div class="card mb-3 shadow-sm border-0">
+    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3 py-2">
+        
+        <!-- Reloj Global: Fecha + Hora Absoluta + Tiempo Transcurrido -->
+        <div class="d-flex align-items-center gap-3 bg-dark text-white px-3 py-2 rounded">
+            <span class="fs-3">🌐</span>
+            <div class="border-end pe-3 border-secondary">
+                <small class="text-uppercase text-muted d-block fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">TIEMPO REAL SIMULADO</small>
+                <div class="font-monospace text-warning fw-bold fs-5">
+                    <span id="global-sim-date">----/--/--</span>
+                    <span id="global-sim-clock" class="ms-1">--:--:--</span>
+                </div>
+            </div>
+            <div>
+                <small class="text-uppercase text-muted d-block fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">TIEMPO TRANSCURRIDO</small>
+                <span id="global-sim-elapsed" class="font-monospace text-info fw-bold fs-5">00:00:00</span>
             </div>
         </div>
+
+        <!-- Botonera de Control -->
+        <div class="d-flex align-items-center gap-2">
+            <button id="btn-play-pause" onclick="togglePausaSimulacion()" class="btn btn-primary fw-bold">
+                ⏸️ Pausar
+            </button>
+            <button onclick="avanzarPasoPaso()" class="btn btn-outline-secondary fw-bold">
+                ⏩ +10 min
+            </button>
+            <button onclick="reiniciarSimulacion()" class="btn btn-outline-danger fw-bold">
+                🔄 Reiniciar
+            </button>
+        </div>
+
+        <!-- Slider de Velocidad (Soporta desde 0.2x) -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="speedRange" class="form-label mb-0 fw-bold small">Velocidad:</label>
+            <input type="range" class="form-range" id="speedRange" min="0.2" max="5" step="0.1" value="1" style="width: 100px;" oninput="actualizarSliderVelocidad(this.value)">
+            <span id="txt-velocidad" class="badge bg-secondary">x1.0</span>
+        </div>
+
+    </div>
+</div>
 
         <div class="position-relative">
             <div id="map" style="height: 60vh; width: 100%;" class="mb-5 rounded shadow"></div>
             
+            {{-- 📊 TARJETAS OVERLAY (SIMULADOR) --}}
             <div class="sim-overlay-container">
                 @if(isset($paths['distance']) && $paths['distance'])
                 <div id="overlay-distance" class="radar-card radar-distance">
@@ -76,8 +104,9 @@
                     <hr class="my-1 border-success">
                     <div class="small text-dark">
                         <div>⏱️ SIM TIME: <span id="clock-distance">--:--:--</span></div>
-                        <div class="my-1">STATUS: <span id="status-distance" class="solari-text" style="color: #198754;">IDLE</span></div>
-                        <div>📊 PROG: <span id="prog-distance">0</span> / <span id="total-distance-val">{{ number_format($paths['distance']->total_distance / 1000, 2) }}</span> km</div>
+                        <div>🛫 PRÓX. SALIDA: <span id="next-dep-distance" class="fw-bold text-success">--:--</span></div>
+                        <div class="my-1">ESTADO: <span id="status-distance" class="solari-text text-success">IDLE</span></div>
+                        <div>📊 PROGRESO: <span id="prog-distance">0</span> / <span id="total-distance-val">{{ number_format($paths['distance']->total_distance / 1000, 2) }}</span> km</div>
                     </div>
                 </div>
                 @endif
@@ -91,8 +120,9 @@
                     <hr class="my-1 border-primary">
                     <div class="small text-dark">
                         <div>⏱️ SIM TIME: <span id="clock-time">--:--:--</span></div>
-                        <div class="my-1">STATUS: <span id="status-time" class="solari-text" style="color: #0d6efd;">IDLE</span></div>
-                        <div>📊 PROG: <span id="prog-time">--:--</span> / <span id="total-time-val">{{ gmdate('H:i', $paths['time']->total_time * 60) }}</span> hrs</div>
+                        <div>🛫 PRÓX. SALIDA: <span id="next-dep-time" class="fw-bold text-primary">--:--</span></div>
+                        <div class="my-1">ESTADO: <span id="status-time" class="solari-text text-primary">IDLE</span></div>
+                        <div>📊 PROGRESO: <span id="prog-time">00:00</span> / <span id="total-time-val">{{ floor($paths['time']->total_time / 60) }}:{{ sprintf('%02d', $paths['time']->total_time % 60) }}</span> hrs</div>
                     </div>
                 </div>
                 @endif
@@ -106,15 +136,16 @@
                     <hr class="my-1 border-danger">
                     <div class="small text-dark">
                         <div>⏱️ SIM TIME: <span id="clock-cost">--:--:--</span></div>
-                        <div class="my-1">STATUS: <span id="status-cost" class="solari-text" style="color: #dc3545;">IDLE</span></div>
-                        <div>💰 BUDGET: $<span id="prog-cost">0</span> / $<span id="total-cost-val">{{ $paths['cost']->total_cost }}</span></div>
+                        <div>🛫 PRÓX. SALIDA: <span id="next-dep-cost" class="fw-bold text-danger">--:--</span></div>
+                        <div class="my-1">ESTADO: <span id="status-cost" class="solari-text text-danger">IDLE</span></div>
+                        <div>📊 PRESUPUESTO: $<span id="prog-cost">0.00</span> / $<span id="total-cost-val">{{ number_format($paths['cost']->total_cost, 2) }}</span></div>
                     </div>
                 </div>
                 @endif
             </div>
         </div>
 
-        {{-- Código Blade de contingencia e info (Se mantiene igual) --}}
+        {{-- DESGLOSE DETALLADO DE RUTAS ENCONTRADAS --}}
         @php
             $uniquePaths = [];
             foreach ($paths as $criterion => $path) {
@@ -132,61 +163,144 @@
             @php 
                 $path = $item['path']; 
                 $criteriaGroup = $item['criteria'];
+
+                // Colores dinámicos del Header según criterio para matchear el radar
+                $headerBorderColor = 'border-secondary';
+                if (in_array('distance', $criteriaGroup)) {
+                    $headerBorderColor = 'border-success border-3';
+                } elseif (in_array('cost', $criteriaGroup)) {
+                    $headerBorderColor = 'border-danger border-3';
+                } elseif (in_array('time', $criteriaGroup)) {
+                    $headerBorderColor = 'border-primary border-3';
+                }
+
+                // Cálculo de minutos reales en el aire
+                $inAirMinutes = 0;
+                foreach($path->flights as $f) {
+                    $inAirMinutes += \Carbon\Carbon::parse($f->departure_time)->diffInMinutes(\Carbon\Carbon::parse($f->arrival_time));
+                }
             @endphp
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
+
+            <div class="card mb-4 shadow-sm {{ $headerBorderColor }}">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 text-warning fw-bold">
+                        📌 
                         @foreach($criteriaGroup as $index => $crit)
                             Sorted by {{ ucfirst($crit) }}{{ $index < count($criteriaGroup) - 1 ? ' & ' : '' }}
                         @endforeach
-                    </h4>
+                    </h5>
+                    
+                    {{-- BADGES REORGANIZADOS Y CON COLORES NEUTROS/INFORMATIVOS --}}
+                    <div class="d-flex gap-2 small font-monospace flex-wrap">
+                        <span class="badge bg-secondary fs-6">
+                            💵 Costo: ${{ number_format($path->total_cost, 2) }}
+                        </span>
+                        <span class="badge bg-info text-dark fs-6">
+                            📏 Distancia: {{ number_format($path->total_distance / 1000, 2) }} km
+                        </span>
+                        <span class="badge bg-light text-dark fs-6 border">
+                            ✈️ En Aire: {{ floor($inAirMinutes / 60) }}h {{ sprintf('%02d', $inAirMinutes % 60) }}m
+                        </span>
+                        <span class="badge bg-purple text-white fs-6" style="background-color: #6f42c1;">
+                            ⏱️ Ventana Itinerario: {{ floor($path->total_time / 60) }}h {{ sprintf('%02d', $path->total_time % 60) }}m
+                        </span>
+                    </div>
                 </div>
+
                 <div class="card-body">
-                    <h5 class="card-title">Airports</h5>
-                    <ul class="list-group list-group-flush mb-3">
-                        @foreach($path->airports as $airport)
-                            <li class="list-group-item">
-                                <strong>{{ $airport->name }}</strong> ({{ $airport->code }}) <br>
-                                <small class="text-muted">Lat: {{ $airport->latitude }}, Lng: {{ $airport->longitude }}</small>
-                            </li>
-                        @endforeach
-                    </ul>
+                    <h6 class="card-subtitle mb-3 text-muted fw-bold">Itinerario y Escalas:</h6>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Origen</th>
+                                    <th>Despegue</th>
+                                    <th>Vuelo</th>
+                                    <th>Destino</th>
+                                    <th>Aterrizaje</th>
+                                    <th>Costo</th>
+                                    <th>Detalle Tramo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($path->flights as $index => $flight)
+                                    <tr>
+                                        <td><span class="badge bg-secondary rounded-pill">{{ $index + 1 }}</span></td>
+                                        <td>
+                                            <strong>{{ $flight->departureAirport->code }}</strong><br>
+                                            <small class="text-muted">{{ $flight->departureAirport->name }}</small>
+                                        </td>
+                                        <td><span class="badge bg-outline-dark text-dark border px-2 py-1">{{ \Carbon\Carbon::parse($flight->departure_time)->format('d/m/Y H:i') }}</span></td>
+                                        <td>
+                                            <span class="fw-bold text-dark" 
+                                                  data-bs-toggle="tooltip" 
+                                                  data-bs-html="true" 
+                                                  title="<b>Vuelo #{{ $flight->id }}</b><br>Salida: {{ $flight->departure_time }}<br>Llegada: {{ $flight->arrival_time }}">
+                                                ✈️ Flight #{{ $flight->id }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ $flight->arrivalAirport->code }}</strong><br>
+                                            <small class="text-muted">{{ $flight->arrivalAirport->name }}</small>
+                                        </td>
+                                        <td><span class="badge bg-outline-dark text-dark border px-2 py-1">{{ \Carbon\Carbon::parse($flight->arrival_time)->format('d/m/Y H:i') }}</span></td>
+                                        <td class="fw-bold text-dark">${{ number_format($flight->ticket_cost, 2) }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-dark" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-trigger="hover focus"
+                                                    title="Detalle del Tramo" 
+                                                    data-bs-content="Costo: ${{ $flight->ticket_cost }} | Salida: {{ $flight->departure_time }} | Llegada: {{ $flight->arrival_time }}">
+                                                🔍 Info
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         @endforeach
     @else
-        <p class="alert alert-warning">No paths found.</p>
+        <p class="alert alert-warning text-center">No paths found for the selected criteria.</p>
     @endif
 </div>
 
-{{-- API Externa de Google Maps --}}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl);
+        });
+    });
+</script>
+
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=geometry"></script>
 
-{{-- Inyección modular e inteligente de los módulos mediante Vite --}}
 @vite([
     'resources/js/simulador/google-maps-helper.js',
     'resources/js/simulador/flight-animator.js'
 ])
 
-{{-- Orquestador local nativo --}}
 <script type="text/javascript">
-    // Convertimos de forma segura la variable de Laravel a JSON para Javascript
     const rawPathsData = @json($paths);
 
-    /**
-     * Inicializador gatillado automáticamente por el DomListener de Google
-     */
     function initialize() {
-        // 1. Procesamos datos y variables estructurales del radar
-        window.prepararSimulacion(rawPathsData);
-
-        // 2. Montamos la instancia física en el contenedor HTML
-        window.googleMapInstance = new google.maps.Map(document.getElementById('map'));
-        
-        // 3. Encendemos el motor de simulación gráfica cuadro por cuadro
-        window.ejecutarSimulacion(window.googleMapInstance);
+        if (typeof window.prepararSimulacion === 'function') {
+            window.prepararSimulacion(rawPathsData);
+            window.googleMapInstance = new google.maps.Map(document.getElementById('map'));
+            window.ejecutarSimulacion(window.googleMapInstance);
+        }
     }
 
-    // Escuchamos la carga completa de la ventana para disparar la inicialización
     google.maps.event.addDomListener(window, 'load', initialize);
 </script>
+@endsection

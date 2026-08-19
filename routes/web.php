@@ -89,17 +89,3 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('flights', FlightController::class)->except(['index', 'create', 'store', 'destroy']);
 
 });
-
-
-
-
-// Route::middleware(['auth', 'employee'])->group(function () {
-//     Route::get('/flights/create', [FlightController::class, 'create'])->name('flights.create');
-//     Route::post('/flights', [FlightController::class, 'store'])->name('flights.store');
-
-//     Route::get('/airports/create', [AirportController::class, 'create'])->name('airports.create');
-//     Route::post('/airports', [AirportController::class, 'store'])->name('airports.store');
-
-//     Route::get('/airlines/create', [AirlineController::class, 'create'])->name('airlines.create');
-//     Route::post('/airlines', [AirlineController::class, 'store'])->name('airlines.store');
-// });

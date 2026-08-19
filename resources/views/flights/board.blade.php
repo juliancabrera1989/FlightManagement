@@ -43,10 +43,6 @@
         </table>
     </div>
 </div>
-    <!-- <script>
-  const flightsFromPHP = @json($flights);
-    console.log(flightsFromPHP);
-    </script> -->
 @endsection
 
 @push('styles')
@@ -123,13 +119,6 @@
             div.classList.remove("flipping");
         }, 200);
     }
-
-    // document.addEventListener("DOMContentLoaded", () => {
-    //     document.querySelectorAll(".flap").forEach(cell => {
-    //         const text = cell.getAttribute("data-text") || "";
-    //         animateFlap(cell, text);
-    //     });
-    // });
 
     window.addEventListener("load", () => {
     document.querySelectorAll(".flap").forEach(cell => {

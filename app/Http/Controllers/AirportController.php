@@ -99,22 +99,6 @@ public function airportsByCountry(Request $request)
 }
 
 
-// public function findByCode(Request $request)
-// {
-//     $code = $request->query('code');
 
-//     if (!$code) {
-//         return response()->json(['error' => 'No code provided'], 400);
-//     }
-
-//     // Busca estrictamente por la columna 'code' que me confirmaste que tenés
-//     $airport = \App\Models\Airport::where('code', strtoupper($code))->first();
-
-//     if (!$airport) {
-//         return response()->json(['error' => 'Airport not found'], 404);
-//     }
-
-//     return response()->json($airport);
-// }
 
 }

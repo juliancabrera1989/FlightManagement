@@ -49,6 +49,3 @@ export default function Filters({ filters, setFilters }) {
         </div>
     )
 }
-
-
-

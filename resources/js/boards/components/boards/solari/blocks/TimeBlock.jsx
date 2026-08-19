@@ -1,30 +1,3 @@
-// import SolarisChar from "../SolarisChar";
-
-// export default function TimeBlock({ time }) {
-//   const hours = time?.slice(0, 2) || "  ";
-//   const minutes = time?.slice(2, 4) || "  ";
-
-//   return (
-//     <div className="time-block">
-
-//       <div className="time-hours">
-//         {hours.split("").map((c, i) => (
-//           <SolarisChar key={i} char={c} />
-//         ))}
-//       </div>
-
-//       <div className="time-colon">:</div>
-
-//       <div className="time-minutes">
-//         {minutes.split("").map((c, i) => (
-//           <SolarisChar key={i} char={c} />
-//         ))}
-//       </div>
-
-//     </div>
-//   );
-// }
-
 import React from "react";
 import SolariCell from "../SolariCell";
 
@@ -52,20 +25,6 @@ export default function TimeBlock({
 
   const padded = time.padEnd(4, " ");
 
-// return (
-//   <div className="solari-block solari-time">
-//     {padded.split("").map((char, i) => (
-//       <SolarisCell
-//         key={i}
-//         mode={mode}
-//         targetChar={char}
-//         animable={char !== " "}
-//         onBuildDone={onBuildDone}
-//         onClearDone={onClearDone}
-//       />
-//     ))}
-//   </div>
-// );
 return (
   /* Le agregamos la clase 'block-time' para que el CSS sepa cuánto pasillo dejar */
   <div className="solari-block block-time">

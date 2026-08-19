@@ -1,31 +1,3 @@
-// import SolarisChar from "../SolarisChar";
-
-// export default function TimeBlock({ time }) {
-//   const hours = time?.slice(0, 2) || "  ";
-//   const minutes = time?.slice(2, 4) || "  ";
-
-//   return (
-//     <div className="time-block">
-
-//       <div className="time-hours">
-//         {hours.split("").map((char, i) => (
-//           <SolarisChar key={i} char={char} />
-//         ))}
-//       </div>
-
-//       <div className="time-separator">:</div>
-
-//       <div className="time-minutes">
-//         {minutes.split("").map((char, i) => (
-//           <SolarisChar key={i} char={char} />
-//         ))}
-//       </div>
-
-//     </div>
-//   );
-// }
-
-
 import SolariCell from "../SolariCell";
 
 export default function RouteBlock({
