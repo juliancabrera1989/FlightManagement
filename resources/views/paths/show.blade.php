@@ -3,6 +3,28 @@
 
 @section('content')
 <style>
+    /* Animaciones de parpadeo por criterio */
+@keyframes planeBlinkDistance {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px #198754); transform: scale(1.1); }
+    50% { opacity: 0.3; filter: drop-shadow(0 0 2px #198754); transform: scale(0.9); }
+}
+
+@keyframes planeBlinkTime {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px #0d6efd); transform: scale(1.1); }
+    50% { opacity: 0.3; filter: drop-shadow(0 0 2px #0d6efd); transform: scale(0.9); }
+}
+
+@keyframes planeBlinkCost {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px #dc3545); transform: scale(1.1); }
+    50% { opacity: 0.3; filter: drop-shadow(0 0 2px #dc3545); transform: scale(0.9); }
+}
+
+/* Clases asociadas */
+.plane-waiting-distance { animation: planeBlinkDistance 1.2s infinite ease-in-out; }
+.plane-waiting-time     { animation: planeBlinkTime 1.2s infinite ease-in-out; }
+.plane-waiting-cost     { animation: planeBlinkCost 1.2s infinite ease-in-out; }
+
+
     .radar-card {
         background: #ffffff;
         border-radius: 8px;
@@ -57,7 +79,8 @@
 
             <div class="d-flex align-items-center gap-2">
                 <button id="btn-play-pause" onclick="togglePausaSimulacion()" class="btn btn-primary btn-sm fw-bold px-3">⏸️ Pausar</button>
-                <button onclick="avanzarPasoPaso()" class="btn btn-outline-secondary btn-sm fw-bold">⏩ +10 min</button>
+                <!-- <button onclick="avanzarPasoPaso()" class="btn btn-outline-secondary btn-sm fw-bold">⏩ +10 min</button> -->
+                <button onclick="avanzarSiguienteEvento()" class="btn btn-outline-secondary btn-sm fw-bold">⏭️ Step (Evento)</button>
                 <button onclick="reiniciarSimulacion()" class="btn btn-outline-danger btn-sm fw-bold">🔄 Reiniciar</button>
             </div>
 

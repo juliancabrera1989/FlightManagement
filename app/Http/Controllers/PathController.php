@@ -20,31 +20,35 @@ class PathController extends Controller
     }
 
     public function show(Request $request)
-{
-    $request->validate([
-        'departure_airport_id' => 'required|exists:airports,id',
-        'arrival_airport_id'   => 'required|exists:airports,id',
-        'search_type'          => 'required|in:optimal,all_alternative',
-        'criteria'             => 'nullable|array',
-        'start_date'           => 'nullable|date',
-        'end_date'             => 'nullable|date|after_or_equal:start_date',
-    ]);
+    {
+        $request->validate([
+            'departure_airport_id' => 'required|exists:airports,id',
+            'arrival_airport_id'   => 'required|exists:airports,id',
+            'search_type'          => 'required|in:optimal,all_alternative',
+            'criteria'             => 'nullable|array',
+            'start_date'           => 'nullable|date',
+            'end_date'             => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-    $departureId = $request->input('departure_airport_id');
-    $arrivalId   = $request->input('arrival_airport_id');
-    $searchType  = $request->input('search_type');
-    $criteria    = $request->input('criteria', ['distance', 'cost', 'time']);
-    $startDate   = $request->input('start_date');
-    $endDate     = $request->input('end_date');
+        $departureId = $request->input('departure_airport_id');
+        $arrivalId   = $request->input('arrival_airport_id');
+        $searchType  = $request->input('search_type');
+        $criteria    = $request->input('criteria', ['distance', 'cost', 'time']);
+        $startDate   = $request->input('start_date');
+        $endDate     = $request->input('end_date');
 
-    if ($searchType === 'optimal') {
-        // Dijkstra adaptado con cotas temporales
+        // 🔹 CASO A: DFS (Explorar todas las alternativas)
+        if ($searchType === 'all_alternative') {
+            $allPaths = $this->pathService->getAllAlternativePaths($departureId, $arrivalId, $startDate, $endDate);
+
+            // ✅ Retorna la vista exclusiva de DFS con su mapa interactivo
+            return view('paths.all', compact('allPaths'));
+        }
+
+        // 🔹 CASO B: Dijkstra (Rutas óptimas)
         $paths = $this->pathService->getPaths($departureId, $arrivalId, $criteria, $startDate, $endDate);
-    } else {
-        // DFS adaptado con cotas temporales
-        $paths = $this->pathService->getAllAlternativePaths($departureId, $arrivalId, $startDate, $endDate);
-    }
 
-    return view('paths.show', compact('paths', 'searchType'));
-}
+        // ✅ Retorna la vista exclusiva de Dijkstra
+        return view('paths.show', compact('paths'));
+    }
 }
