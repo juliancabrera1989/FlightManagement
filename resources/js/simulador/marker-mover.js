@@ -11,7 +11,7 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
     let fraction = 0;
 
     let claveTramo = `${infoVuelo.departure_airport_id}-${infoVuelo.arrival_airport_id}-${infoVuelo.departure_time}`;
-    let criteriosCompartidos = window.tramosGlobalesCompartidos[claveTramo] || [crit];
+    let criteriosCompartidos = (window.tramosGlobalesCompartidos && window.tramosGlobalesCompartidos[claveTramo]) ? window.tramosGlobalesCompartidos[claveTramo] : [crit];
     
     let rumboBase = (google.maps.geometry && google.maps.geometry.spherical) ? 
                     google.maps.geometry.spherical.computeHeading(startPos, endPos) : 0;
@@ -66,14 +66,19 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
     const arrTime = infoVuelo.arrival_time ? new Date(infoVuelo.arrival_time).getTime() : (depTime + (duration * 60 * 1000 / 5));
     const totalVueloMs = arrTime - depTime;
 
-    // Volvemos a calcular la duración base real sin alterar (la usamos de referencia para el avance del slider)
-    const duracionBaseSimulada = duration * window.multiplicadorVelocidad;
+    // Volvemos a calcular la duración base real sin alterar
+    const duracionBaseSimulada = duration * (window.multiplicadorVelocidad || 1);
+
+    // SANITIZACIÓN SEGURA DE VALORES (Evita que sume undefined o NaN)
+    const costoTramo = parseFloat(infoVuelo.price || infoVuelo.ticket_cost || 0);
+    const rawDist = parseFloat(infoVuelo.distance || 0);
+    const distTramoKm = rawDist > 10000 ? rawDist / 1000 : rawDist; // Si viene en metros lo pasa a km
+    const duracionTramoMins = parseFloat(infoVuelo.duration || 0);
 
     const runStep = () => {
-        // ⏸️ SI LA SIMULACIÓN ESTÁ PAUSADA: Volvemos a programar el paso sin avanzar la 'fraction'
         if (window.simulacionPausada) {
-            let siguientePasoTimeout = setTimeout(runStep, msPorCuadro);
-            window.todosLosTimeouts.push(siguientePasoTimeout);
+            let timeoutPausa = setTimeout(runStep, msPorCuadro);
+            if (window.todosLosTimeouts) window.todosLosTimeouts.push(timeoutPausa);
             return;
         }
 
@@ -90,11 +95,15 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
                 delete window.avionesActivosEnSimulacion[claveTramo];
             }
 
-            if (crit === 'cost') acumuladoPrevio += parseFloat(infoVuelo.price || 0);
-            if (crit === 'distance') acumuladoPrevio += parseFloat((infoVuelo.distance || 0) / 1000);
-            if (crit === 'time') acumuladoPrevio += parseFloat(infoVuelo.duration || 0);
+            // MANTENEMOS TU ACUMULACIÓN EXACTA ORIGINAL
+            let valorAAcumular = 0;
+            if (crit === 'cost') valorAAcumular = costoTramo;
+            if (crit === 'distance') valorAAcumular = distTramoKm;
+            if (crit === 'time') valorAAcumular = duracionTramoMins;
+
+            let nuevoAcumulado = (parseFloat(acumuladoPrevio) || 0) + valorAAcumular;
             
-            if (callback) callback(acumuladoPrevio);
+            if (callback) callback(nuevoAcumulado);
         } else {
             let currentPos = (google.maps.geometry && google.maps.geometry.spherical) ? 
                              google.maps.geometry.spherical.interpolate(startPos, endPos, fraction) : startPos;
@@ -129,15 +138,14 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
             updateProgressUI(crit, acumuladoPrevio, infoVuelo, fraction);
 
             // 🌟 MATEMÁTICA MAGICA: Avanza la fraccion leyendo el slider actual en este milisegundo
-            // msPorCuadro (30ms) * velocidad elegida / duración base del tramo
-            fraction += (msPorCuadro * window.multiplicadorVelocidad) / duracionBaseSimulada;
+            fraction += (msPorCuadro * (window.multiplicadorVelocidad || 1)) / (duracionBaseSimulada || 1);
             if (fraction > 1.0) fraction = 1.0;
 
             let siguientePasoTimeout = setTimeout(runStep, msPorCuadro);
-            window.todosLosTimeouts.push(siguientePasoTimeout);
+            if (window.todosLosTimeouts) window.todosLosTimeouts.push(siguientePasoTimeout);
         }
     };
 
     let primerPasoTimeout = setTimeout(runStep, msPorCuadro);
-    window.todosLosTimeouts.push(primerPasoTimeout);
+    if (window.todosLosTimeouts) window.todosLosTimeouts.push(primerPasoTimeout);
 }
