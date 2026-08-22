@@ -29,8 +29,8 @@
         @if(auth()->user()->role === 'employee')
             <div class="btn-group shadow-sm">
                 <a href="{{ route('flights.create') }}" class="btn btn-primary fw-bold">+ Flight</a>
-                <a href="{{ route('airports.create') }}" class="btn btn-outline-primary fw-bold">+ Airport</a>
-                <a href="{{ route('airlines.create') }}" class="btn btn-outline-primary fw-bold">+ Airline</a>
+                <!-- <a href="{{ route('airports.create') }}" class="btn btn-outline-primary fw-bold">+ Airport</a>
+                <a href="{{ route('airlines.create') }}" class="btn btn-outline-primary fw-bold">+ Airline</a> -->
             </div>
         @endif
     </div>

@@ -20,6 +20,7 @@ class Flight extends Model
     'departure_time',
     'arrival_time',
     'ticket_cost',
+    'duration',
     'gate',
     'terminal',
     'checkin_rows',

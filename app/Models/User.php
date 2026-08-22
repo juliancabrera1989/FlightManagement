@@ -28,6 +28,12 @@ class User extends Authenticatable
     ];
 
     // 🔹 Helper methods
+
+    public function isAdmin(): bool
+{
+    return $this->role === 'admin'; // o $this->employee_type === 'admin'
+}
+
     public function isEmployee() {
         return $this->role === 'employee';
     }

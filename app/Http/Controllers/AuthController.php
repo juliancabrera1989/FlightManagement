@@ -44,41 +44,79 @@ class AuthController extends Controller
     /**
      * Procesa el registro guardando los datos según el rol elegido
      */
-    public function register(Request $request) {
-        // 1. Validaciones estrictas incluyendo los nuevos campos condicionales
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|confirmed|min:8',
-            'role' => 'required|in:passenger,employee',
+    // public function register(Request $request) {
+    //     // 1. Validaciones estrictas incluyendo los nuevos campos condicionales
+    //     $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'email' => 'required|string|email|max:255|unique:users',
+    //         'password' => 'required|string|confirmed|min:8',
+    //         'role' => 'required|in:passenger,employee',
             
-            // Si el rol es empleado, estos campos se vuelven obligatorios bajo ciertas condiciones
+    //         // Si el rol es empleado, estos campos se vuelven obligatorios bajo ciertas condiciones
+    //         'employee_type' => 'required_if:role,employee|nullable|in:airline,airport',
+    //         'airline_id'    => 'required_if:employee_type,airline|nullable|exists:airlines,id',
+    //         'airport_id'    => 'required_if:employee_type,airport|nullable|exists:airports,id',
+    //     ]);
+
+    //     // 2. Preparamos los datos base para la creación del usuario
+    //     $userData = [
+    //         'name'     => $request->name,
+    //         'email'    => $request->email,
+    //         'password' => Hash::make($request->password),
+    //         'role'     => $request->role,
+    //     ];
+
+    //     // 3. Si se registró como empleado, le sumamos sus campos específicos
+    //     if ($request->role === 'employee') {
+    //         $userData['employee_type'] = $request->employee_type;
+            
+    //         // Si es de aerolínea guardamos su aerolínea, si es de aeropuerto su aeropuerto
+    //         $userData['airline_id'] = $request->employee_type === 'airline' ? $request->airline_id : null;
+    //         $userData['airport_id'] = $request->employee_type === 'airport' ? $request->airport_id : null;
+    //     }
+
+    //     // 4. Creamos el usuario en la BD (Recordá tener estos campos en el $fillable de User.php)
+    //     $user = User::create($userData);
+
+    //     // 5. Iniciamos sesión automáticamente y redirigimos
+    //     Auth::login($user);
+    //     return redirect('/');
+    // }
+    
+    public function register(Request $request) {
+        // 1. Validaciones
+        $request->validate([
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|string|email|max:255|unique:users',
+            'password'      => 'required|string|confirmed|min:8',
+            'role'          => 'required|in:passenger,employee', // 🔒 Solo permite passenger o employee en el registro público
+            
             'employee_type' => 'required_if:role,employee|nullable|in:airline,airport',
             'airline_id'    => 'required_if:employee_type,airline|nullable|exists:airlines,id',
             'airport_id'    => 'required_if:employee_type,airport|nullable|exists:airports,id',
         ]);
 
-        // 2. Preparamos los datos base para la creación del usuario
+        // 2. Seguridad: Forzar la lectura estricta del request
+        $role = in_array($request->role, ['passenger', 'employee']) ? $request->role : 'passenger';
+
+        // 3. Preparación de datos base
         $userData = [
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'role'     => $role,
         ];
 
-        // 3. Si se registró como empleado, le sumamos sus campos específicos
-        if ($request->role === 'employee') {
+        // 4. Lógica de Empleados
+        if ($role === 'employee') {
             $userData['employee_type'] = $request->employee_type;
-            
-            // Si es de aerolínea guardamos su aerolínea, si es de aeropuerto su aeropuerto
-            $userData['airline_id'] = $request->employee_type === 'airline' ? $request->airline_id : null;
-            $userData['airport_id'] = $request->employee_type === 'airport' ? $request->airport_id : null;
+            $userData['airline_id']    = $request->employee_type === 'airline' ? $request->airline_id : null;
+            $userData['airport_id']    = $request->employee_type === 'airport' ? $request->airport_id : null;
         }
 
-        // 4. Creamos el usuario en la BD (Recordá tener estos campos en el $fillable de User.php)
+        // 5. Creación del usuario e Inicio de sesión
         $user = User::create($userData);
 
-        // 5. Iniciamos sesión automáticamente y redirigimos
         Auth::login($user);
         return redirect('/');
     }

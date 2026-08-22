@@ -217,12 +217,28 @@ footer {
                 @endauth
             @endif
 
-            {{-- Employee-only --}}
             @auth
-                @if(auth()->user()->role === 'employee')
-                    <li class="nav-item"><a class="nav-link {{ request()->is('flights/create') ? 'active' : '' }}" href="{{ route('flights.create') }}">Add Flight</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->is('airports/create') ? 'active' : '' }}" href="{{ route('airports.create') }}">Add Airport</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->is('airlines/create') ? 'active' : '' }}" href="{{ route('airlines.create') }}">Add Airline</a></li>
+                {{-- Crear Vuelo: Tanto Empleados como Administradores --}}
+                @if(auth()->user()->isEmployee() || auth()->user()->isAdmin())
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('flights.create') ? 'active' : '' }}" href="{{ route('flights.create') }}">
+                            <i class="bi bi-plus-circle me-1"></i> Add Flight
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Exclusivo Administrador: Crear Aeropuerto y Aerolínea --}}
+                @if(auth()->user()->isAdmin())
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('airports.create') ? 'active' : '' }}" href="{{ route('airports.create') }}">
+                            <i class="bi bi-building-add me-1"></i> Add Airport
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('airlines.create') ? 'active' : '' }}" href="{{ route('airlines.create') }}">
+                            <i class="bi bi-pie-chart me-1"></i> Add Airline
+                        </a>
+                    </li>
                 @endif
             @endauth
 
@@ -253,14 +269,52 @@ footer {
                 </ul>
             </li>
             {{-- Auth links --}}
+            {{-- Auth / User Status Badge --}}
+            {{-- Auth / User Status Badge --}}
             @guest
-                <li class="nav-item"><a class="nav-link {{ request()->is('login') ? 'active' : '' }}" href="{{ route('login') }}">Login</a></li>
-                <li class="nav-item"><a class="nav-link {{ request()->is('register') ? 'active' : '' }}" href="{{ route('register') }}">Register</a></li>
-            @else
                 <li class="nav-item">
-                    <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                    <a class="nav-link {{ request()->is('login') ? 'active' : '' }}" href="{{ route('login') }}">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('register') ? 'active' : '' }}" href="{{ route('register') }}">Register</a>
+                </li>
+            @else
+                {{-- Identificador de Usuario y Rol --}}
+                <li class="nav-item d-flex align-items-center ms-lg-3 my-2 my-lg-0">
+                    <div class="d-flex align-items-center bg-dark bg-opacity-75 px-3 py-1 rounded-pill border border-secondary me-2">
+                        <span class="text-white fw-semibold me-2 small">{{ Auth::user()->name }}</span>
+                        
+                        @if(Auth::user()->role === 'airport_employee')
+                            <span class="badge bg-primary text-wrap">
+                                ✈️ Emp. Aeropuerto: {{ Auth::user()->airport->name ?? 'Asignado' }}
+                            </span>
+                        @elseif(Auth::user()->role === 'airline_employee')
+                            <span class="badge bg-info text-dark text-wrap">
+                                🛫 Emp. Aerolínea: {{ Auth::user()->airline->name ?? 'Asignada' }}
+                            </span>
+                        @elseif(Auth::user()->role === 'passenger')
+                            <span class="badge bg-secondary text-wrap">
+                                👤 Pasajero
+                            </span>
+                        @elseif(Auth::user()->role === 'admin')
+                            <span class="badge bg-danger text-wrap">
+                                🛡️ Admin
+                            </span>
+                        @else
+                            <span class="badge bg-light text-dark text-wrap">
+                                {{ ucfirst(Auth::user()->role) }}
+                            </span>
+                        @endif
+                    </div>
+                </li>
+
+                {{-- Botón Logout --}}
+                <li class="nav-item d-flex align-items-center">
+                    <form method="POST" action="{{ route('logout') }}" class="d-inline m-0">
                         @csrf
-                        <button type="submit" class="btn btn-link nav-link" style="display:inline; cursor:pointer;">Logout</button>
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                            Logout
+                        </button>
                     </form>
                 </li>
             @endguest
