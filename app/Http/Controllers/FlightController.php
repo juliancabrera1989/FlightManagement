@@ -17,15 +17,93 @@ class FlightController extends Controller
 {
   
 
+// public function index(Request $request)
+// {
+//     $airports = Airport::orderBy('code')->get();
+//     $airlines = Airline::orderBy('name')->get();
+
+//     // Si no hay parámetros en la URL, mandamos las colecciones vacías para congelar la pantalla inicial
+//     if (empty($request->all())) {
+//         return view('flights.index', [
+//             'flights' => collect(),
+//             'airports' => $airports,
+//             'airlines' => $airlines
+//         ]);
+//     }
+
+//     $query = Flight::with(['airline', 'departureAirport', 'arrivalAirport']);
+
+//     // 🔒 REGLAS DE RESTRICCIÓN Y FILTRADO POR ROL
+//     if (auth()->check() && auth()->user()->role === 'employee') {
+        
+//         if (auth()->user()->employee_type === 'airline') {
+//             // ✈️ STAFF DE AEROLÍNEA: Forzado a ver solo su empresa
+//             $query->where('airline_id', auth()->user()->airline_id);
+
+//             // Filtros de su formulario específico
+//             if ($request->filled('origin')) {
+//                 $query->where('departure_airport_id', $request->origin);
+//             }
+//             if ($request->filled('destination')) {
+//                 $query->where('arrival_airport_id', $request->destination);
+//             }
+//         } 
+//         elseif (auth()->user()->employee_type === 'airport') {
+//             // 🏢 STAFF DE AEROPUERTO: Forzado a ver lo que toque su base
+//             $myAirportId = auth()->user()->airport_id;
+
+//             if ($request->input('airport_op') === 'arrivals') {
+//                 // Si busca arribos, el destino del vuelo es SU aeropuerto
+//                 $query->where('arrival_airport_id', $myAirportId);
+                
+//                 // Y el filtro "connected_airport" actúa como el origen del vuelo
+//                 if ($request->filled('connected_airport')) {
+//                     $query->where('departure_airport_id', $request->connected_airport);
+//                 }
+//             } else {
+//                 // Por defecto: Departures (Salidas). El origen del vuelo es SU aeropuerto
+//                 $query->where('departure_airport_id', $myAirportId);
+
+//                 // Y el filtro "connected_airport" actúa como el destino final del vuelo
+//                 if ($request->filled('connected_airport')) {
+//                     $query->where('arrival_airport_id', $request->connected_airport);
+//                 }
+//             }
+//         }
+        
+//     } else {
+//         // 👤 PASAJERO COMÚN: Solo ve programados + filtros comerciales clásicos
+//         $query->where('status', 'Scheduled');
+
+//         if ($request->filled('origin')) {
+//             $query->where('departure_airport_id', $request->origin);
+//         }
+//         if ($request->filled('destination')) {
+//             $query->where('arrival_airport_id', $request->destination);
+//         }
+//         if ($request->filled('airline')) {
+//             $query->where('airline_id', $request->airline);
+//         }
+//     }
+
+//     // Filtro global de fecha (Aplica a todos los roles)
+//     if ($request->filled('date')) {
+//         $query->whereDate('departure_time', $request->date);
+//     }
+
+//     $flights = $query->orderBy('departure_time', 'asc')->get();
+
+//     return view('flights.index', compact('flights', 'airports', 'airlines'));
+// }
+
 public function index(Request $request)
 {
     $airports = Airport::orderBy('code')->get();
     $airlines = Airline::orderBy('name')->get();
 
-    // Si no hay parámetros en la URL, mandamos las colecciones vacías para congelar la pantalla inicial
     if (empty($request->all())) {
         return view('flights.index', [
-            'flights' => collect(),
+            'flights'  => collect(),
             'airports' => $airports,
             'airlines' => $airlines
         ]);
@@ -34,13 +112,24 @@ public function index(Request $request)
     $query = Flight::with(['airline', 'departureAirport', 'arrivalAirport']);
 
     // 🔒 REGLAS DE RESTRICCIÓN Y FILTRADO POR ROL
-    if (auth()->check() && auth()->user()->role === 'employee') {
+    if (auth()->check() && auth()->user()->isAdmin()) {
+        
+        // 👑 ADMINISTRADOR: Ve todo sin restricciones + usa filtros globales
+        if ($request->filled('origin')) {
+            $query->where('departure_airport_id', $request->origin);
+        }
+        if ($request->filled('destination')) {
+            $query->where('arrival_airport_id', $request->destination);
+        }
+        if ($request->filled('airline')) {
+            $query->where('airline_id', $request->airline);
+        }
+
+    } elseif (auth()->check() && auth()->user()->role === 'employee') {
         
         if (auth()->user()->employee_type === 'airline') {
-            // ✈️ STAFF DE AEROLÍNEA: Forzado a ver solo su empresa
             $query->where('airline_id', auth()->user()->airline_id);
 
-            // Filtros de su formulario específico
             if ($request->filled('origin')) {
                 $query->where('departure_airport_id', $request->origin);
             }
@@ -49,22 +138,17 @@ public function index(Request $request)
             }
         } 
         elseif (auth()->user()->employee_type === 'airport') {
-            // 🏢 STAFF DE AEROPUERTO: Forzado a ver lo que toque su base
             $myAirportId = auth()->user()->airport_id;
 
             if ($request->input('airport_op') === 'arrivals') {
-                // Si busca arribos, el destino del vuelo es SU aeropuerto
                 $query->where('arrival_airport_id', $myAirportId);
                 
-                // Y el filtro "connected_airport" actúa como el origen del vuelo
                 if ($request->filled('connected_airport')) {
                     $query->where('departure_airport_id', $request->connected_airport);
                 }
             } else {
-                // Por defecto: Departures (Salidas). El origen del vuelo es SU aeropuerto
                 $query->where('departure_airport_id', $myAirportId);
 
-                // Y el filtro "connected_airport" actúa como el destino final del vuelo
                 if ($request->filled('connected_airport')) {
                     $query->where('arrival_airport_id', $request->connected_airport);
                 }
@@ -72,7 +156,7 @@ public function index(Request $request)
         }
         
     } else {
-        // 👤 PASAJERO COMÚN: Solo ve programados + filtros comerciales clásicos
+        // 👤 PASAJERO COMÚN: Solo ve programados
         $query->where('status', 'Scheduled');
 
         if ($request->filled('origin')) {
@@ -86,7 +170,6 @@ public function index(Request $request)
         }
     }
 
-    // Filtro global de fecha (Aplica a todos los roles)
     if ($request->filled('date')) {
         $query->whereDate('departure_time', $request->date);
     }
@@ -96,15 +179,35 @@ public function index(Request $request)
     return view('flights.index', compact('flights', 'airports', 'airlines'));
 }
 
-
-
-      public function create()
+    //   public function create()
+    // {
+    //     $this->authorizeRole('employee');
+    //     $airlines = Airline::all();
+    //     $airports = Airport::all();
+    //     return view('flights.create', compact('airlines', 'airports'));
+    // }
+    public function create()
     {
-        $this->authorizeRole('employee');
+        $user = auth()->user();
+
+        // Verificación de autorización simple
+        if (!$user->isAdmin() && !$user->isEmployee()) {
+            abort(403, 'No tienes permisos para crear vuelos.');
+        }
+
         $airlines = Airline::all();
         $airports = Airport::all();
-        return view('flights.create', compact('airlines', 'airports'));
+        $flight   = new Flight();
+        $modo     = 'Crear';
+
+        return view('flights.form', compact('airlines', 'airports', 'flight', 'modo'));
     }
+
+
+
+
+
+
     // public function store(Request $request)
     // {
 
@@ -206,14 +309,34 @@ public function index(Request $request)
         return view('flights.show', compact('flight'));
     }
 
+    // public function edit(Flight $flight)
+    // {
+
+    //     $this->authorizeRole('employee');
+    //     $airlines = Airline::all();
+    //     $airports = Airport::all();
+    //     return view('flights.edit', compact('flight', 'airlines', 'airports'));
+    // }
+
     public function edit(Flight $flight)
     {
+        $user = auth()->user();
 
-        $this->authorizeRole('employee');
+        // Verificación de autorización simple
+        if (!$user->isAdmin() && !$user->isEmployee()) {
+            abort(403, 'No tienes permisos para crear vuelos.');
+        }
+
         $airlines = Airline::all();
         $airports = Airport::all();
-        return view('flights.edit', compact('flight', 'airlines', 'airports'));
+        // $flight   = new Flight();
+        $modo     = 'Editar';
+
+        return view('flights.form', compact('airlines', 'airports', 'flight', 'modo'));
     }
+
+
+
 
     // public function update(Request $request, Flight $flight)
     // {

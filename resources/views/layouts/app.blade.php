@@ -284,25 +284,21 @@ footer {
                     <div class="d-flex align-items-center bg-dark bg-opacity-75 px-3 py-1 rounded-pill border border-secondary me-2">
                         <span class="text-white fw-semibold me-2 small">{{ Auth::user()->name }}</span>
                         
-                        @if(Auth::user()->role === 'airport_employee')
+                        @if(Auth::user()->isEmployee() && Auth::user()->employee_type === 'airport')
                             <span class="badge bg-primary text-wrap">
-                                ✈️ Emp. Aeropuerto: {{ Auth::user()->airport->name ?? 'Asignado' }}
+                                ✈️ Emp. Aeropuerto: {{ Auth::user()->airport->code ?? 'Asignado' }}
                             </span>
-                        @elseif(Auth::user()->role === 'airline_employee')
+                        @elseif(Auth::user()->isEmployee() && Auth::user()->employee_type === 'airline')
                             <span class="badge bg-info text-dark text-wrap">
                                 🛫 Emp. Aerolínea: {{ Auth::user()->airline->name ?? 'Asignada' }}
                             </span>
-                        @elseif(Auth::user()->role === 'passenger')
-                            <span class="badge bg-secondary text-wrap">
-                                👤 Pasajero
-                            </span>
-                        @elseif(Auth::user()->role === 'admin')
+                        @elseif(Auth::user()->isAdmin())
                             <span class="badge bg-danger text-wrap">
                                 🛡️ Admin
                             </span>
                         @else
-                            <span class="badge bg-light text-dark text-wrap">
-                                {{ ucfirst(Auth::user()->role) }}
+                            <span class="badge bg-secondary text-wrap">
+                                👤 Pasajero
                             </span>
                         @endif
                     </div>

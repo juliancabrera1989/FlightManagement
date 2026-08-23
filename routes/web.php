@@ -72,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/flights/create', [FlightController::class, 'create'])->name('flights.create');
         Route::post('/flights', [FlightController::class, 'store'])->name('flights.store');
         Route::delete('/flights/{flight}', [FlightController::class, 'destroy'])->name('flights.destroy');
+        Route::get('/flights/{flight}/edit', [FlightController::class, 'edit'])->name('flights.edit');
+        Route::put('/flights/{flight}', [FlightController::class, 'update'])->name('flights.update');
         
         // Gestión de Aerolíneas (Creación)
         Route::get('/airlines/create', [AirlineController::class, 'create'])->name('airlines.create');

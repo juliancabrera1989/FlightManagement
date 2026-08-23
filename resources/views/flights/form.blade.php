@@ -13,11 +13,13 @@
                         </a>
                     </div>
 
-                    <form action="{{ $modo == 'Crear' ? route('flights.store') : route('flights.update', $flight->id) }}" method="POST">
-                        @csrf
-                        @if($modo != 'Crear')
+                    <@if($modo == 'Crear')
+                        <form action="{{ route('flights.store') }}" method="POST">
+                    @else
+                        <form action="{{ route('flights.update', $flight) }}" method="POST">
                             @method('PUT')
-                        @endif
+                    @endif
+                        @csrf
 
                         {{-- Selector dinámico exclusivo para Empleados de Aeropuerto --}}
                         @if(auth()->user()->isEmployee() && auth()->user()->employee_type === 'airport')

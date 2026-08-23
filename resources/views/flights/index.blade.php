@@ -15,10 +15,12 @@
     <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
         <div>
             <h1 class="display-6 fw-bold text-dark" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px;">
-                🔍 {{ auth()->user()->role === 'employee' ? 'Staff Control Center' : 'Flights Finder' }}
+                🔍 {{ (auth()->user()->isEmployee() || auth()->user()->isAdmin()) ? 'Staff & Operational Control' : 'Flights Finder' }}
             </h1>
             <p class="text-muted mb-0">
-                @if(auth()->user()->role === 'employee')
+                @if(auth()->user()->isAdmin())
+                    System Administrator Access: Managing global flight operations.
+                @elseif(auth()->user()->isEmployee())
                     Connected as: <strong>{{ auth()->user()->employee_type === 'airline' ? auth()->user()->airline->name : 'Airport Base ' . auth()->user()->airport->code }} Staff</strong>
                 @else
                     Search your next destination. Review live prices and book instantly.
@@ -26,28 +28,27 @@
             </p>
         </div>
         
-        @if(auth()->user()->role === 'employee')
+        @if(auth()->user()->isEmployee() || auth()->user()->isAdmin())
             <div class="btn-group shadow-sm">
-                <a href="{{ route('flights.create') }}" class="btn btn-primary fw-bold">+ Flight</a>
-                <!-- <a href="{{ route('airports.create') }}" class="btn btn-outline-primary fw-bold">+ Airport</a>
-                <a href="{{ route('airlines.create') }}" class="btn btn-outline-primary fw-bold">+ Airline</a> -->
+                <a href="{{ route('flights.create') }}" class="btn btn-primary fw-bold">+ Add Flight</a>
             </div>
         @endif
     </div>
 
+    {{-- Formulario de Filtros --}}
     <div class="card shadow-sm border-0 p-4 mb-5 bg-light" style="border-radius: 12px;">
         <form action="{{ route('flights.index') }}" method="GET" class="row g-3">
             
-            @if(auth()->user()->role === 'employee' && auth()->user()->employee_type === 'airport')
+            @if(auth()->user()->isEmployee() && auth()->user()->employee_type === 'airport')
                 <div class="col-md-3">
                     <label class="form-label fw-bold small text-secondary">Operation Type</label>
                     <select name="airport_op" class="form-select border-primary fw-bold">
-                        <option value="departures" {{ request('airport_op') === 'departures' ? 'selected' : '' }}>🛫 Departures (Salidas)</option>
-                        <option value="arrivals" {{ request('airport_op') === 'arrivals' ? 'selected' : '' }}>🛬 Arrivals (Arribos)</option>
+                        <option value="departures" {{ request('airport_op') === 'departures' ? 'selected' : '' }}>🛫 Departures</option>
+                        <option value="arrivals" {{ request('airport_op') === 'arrivals' ? 'selected' : '' }}>🛬 Arrivals</option>
                     </select>
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label fw-bold small text-secondary">Connected Airport (Connection)</label>
+                    <label class="form-label fw-bold small text-secondary">Connected Airport</label>
                     <select name="connected_airport" class="form-select">
                         <option value="">All Airports</option>
                         @foreach($airports as $airport)
@@ -64,7 +65,7 @@
                     <input type="date" name="date" class="form-control" value="{{ request('date') }}">
                 </div>
 
-            @elseif(auth()->user()->role === 'employee' && auth()->user()->employee_type === 'airline')
+            @elseif(auth()->user()->isEmployee() && auth()->user()->employee_type === 'airline')
                 <div class="col-md-4">
                     <label class="form-label fw-bold small text-secondary">Origin Airport</label>
                     <select name="origin" class="form-select">
@@ -93,6 +94,7 @@
                 </div>
 
             @else
+                {{-- Admin y Pasajeros ven el buscador general --}}
                 <div class="col-md-3">
                     <label class="form-label fw-bold small text-secondary">Origin</label>
                     <select name="origin" class="form-select">
@@ -145,8 +147,8 @@
             <p class="text-muted small">Select your query parameters above and click Search to pull live operational schedules.</p>
         </div>
     @else
-        @if(auth()->user()->role === 'employee')
-            
+        {{-- TABLA ADMINISTRATIVA (Visible para Empleados y Administrador) --}}
+        @if(auth()->user()->isEmployee() || auth()->user()->isAdmin())
             <div class="card shadow-sm border-0 table-responsive" style="border-radius: 8px;">
                 <table class="table table-hover align-middle mb-0 text-nowrap">
                     <thead class="table-dark text-uppercase small" style="font-size: 0.8rem; letter-spacing: 0.5px;">
@@ -183,7 +185,7 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('flights.show', $flight->id) }}" class="btn btn-outline-secondary">👁️</a>
+                                        <!-- <a href="{{ route('flights.show', $flight->id) }}" class="btn btn-outline-secondary">👁️</a> -->
                                         <a href="{{ route('flights.edit', $flight->id) }}" class="btn btn-warning fw-bold">✏️ Edit</a>
                                         <form action="{{ route('flights.destroy', $flight->id) }}" method="POST" style="display:inline;">
                                             @csrf @method('DELETE')
@@ -203,8 +205,8 @@
                 </table>
             </div>
 
+        {{-- TARJETAS PARA PASAJEROS --}}
         @else
-            
             <div class="row g-4">
                 @forelse($flights as $flight)
                     <div class="col-md-6 col-lg-4">
