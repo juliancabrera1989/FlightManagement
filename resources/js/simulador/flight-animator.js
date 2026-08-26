@@ -94,6 +94,23 @@ window.avanzarSiguienteEvento = function() {
 };
 
 window.reiniciarSimulacion = function() {
+
+    // 1. Ocultar o eliminar el cartel de fin de simulación
+    const cartel = document.getElementById('sim-finished-alert');
+    if (cartel) {
+        cartel.remove(); // O cartel.style.display = 'none';
+    }
+
+    // 2. Limpiar timers y estado existente de la simulación
+    if (window.syncLoop) clearInterval(window.syncLoop);
+    
+    // ... tu lógica existente para resetear marcadores y tiempo ...
+
+
+
+
+
+
     window.todosLosIntervalos.forEach(clearInterval);
     window.todosLosTimeouts.forEach(clearTimeout);
     window.todosLosIntervalos = [];

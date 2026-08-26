@@ -106,5 +106,17 @@ function toggleCriteria(show) {
         }
     }
 }
+
+// Sincronizar la interfaz tan pronto como la página se cargue o se recupere del historial
+document.addEventListener('DOMContentLoaded', syncUIOnLoad);
+window.addEventListener('pageshow', syncUIOnLoad);
+
+function syncUIOnLoad() {
+    const modeOptimal = document.getElementById('mode_optimal');
+    if (modeOptimal) {
+        // Aplica la lógica dependiendo de cuál radio está seleccionado actualmente en el navegador
+        toggleCriteria(modeOptimal.checked);
+    }
+}
 </script>
 @endsection

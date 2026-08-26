@@ -109,7 +109,7 @@ class GraphService
                     // Garantiza que la salida del siguiente tramo sea posterior a la llegada del anterior (mínimo 45 min, máximo 48 hs)
                     if ($u != $start && $arrivalTimeAtNode[$u] !== null) {
                         $minScale = $arrivalTimeAtNode[$u] + (45 * 60); // 45 minutos mínimo de conexión
-                        $maxScale = $arrivalTimeAtNode[$u] + (48 * 60 * 60); // 48 horas máximo
+                        $maxScale = $arrivalTimeAtNode[$u] + (48 * 60 * 60); //48 horas máximo
                         if ($depTime < $minScale || $depTime > $maxScale) {
                             continue;
                         }
@@ -137,7 +137,7 @@ class GraphService
         }
 
         if ($dist[$end] === INF) {
-            return null; 
+            return null;
         }
 
         // Reconstrucción de la ruta en nodos (IDs de aeropuertos)
@@ -162,12 +162,12 @@ class GraphService
     {
         $allPaths = [];
         $visited = [];
-        
+
         $startTimestamp = $startDate ? strtotime($startDate) : null;
         $endTimestamp = $endDate ? strtotime($endDate) : null;
 
         $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp);
-        
+
         return $allPaths;
     }
 
@@ -181,18 +181,19 @@ protected function dfs(
         $depth, 
         $startTimestamp, 
         $endTimestamp,
-        $maxPaths = 50 // 👈 FRENO DE MANO
+        $maxPaths = 50
     ) {
-        // Cortar si ya juntamos las rutas suficientes
+        // 1. Freno por cantidad de rutas
         if (count($allPaths) >= $maxPaths) {
             return;
         }
 
-        // Poda por profundidad (máximo 3 tramos)
+        // 2. Freno por escalas máximas
         if ($depth > 3) {
             return;
         }
 
+        // 3. Caso Éxito
         if ($currentAirport == $destination) {
             $allPaths[] = $currentPathFlights;
             return;
@@ -203,13 +204,12 @@ protected function dfs(
         if (isset($this->graph[$currentAirport])) {
             foreach ($this->graph[$currentAirport] as $nextAirport => $listOfFlights) {
                 
+                // Evitar ciclos
                 if (isset($visited[$nextAirport]) && $visited[$nextAirport]) {
                     continue;
                 }
 
                 foreach ($listOfFlights as $flightDetails) {
-                    
-                    // Si ya llegamos al límite en medio de las iteraciones, salir inmediatamente
                     if (count($allPaths) >= $maxPaths) {
                         break;
                     }
@@ -217,21 +217,10 @@ protected function dfs(
                     $depTime = strtotime($flightDetails['flight']->departure_time);
                     $arrTime = strtotime($flightDetails['flight']->arrival_time);
 
-                    // Poda por fecha inicial
-                    if ($startTimestamp && $lastArrivalTime === null && $depTime < $startTimestamp) {
+                    // ⚠️ SI TIENE CONEXIÓN: Solo pedir que el siguiente vuelo salga DESPUÉS del que llegó
+                    // (Quitamos temporalmente la restricción estricta de fechas globales para probar)
+                    if ($lastArrivalTime !== null && $depTime < $lastArrivalTime) {
                         continue;
-                    }
-
-                    // Poda por fecha límite (ventana de días)
-                    if ($endTimestamp && $arrTime > $endTimestamp) {
-                        continue;
-                    }
-
-                    // Poda de tiempos de escala (entre 45 min y 24 horas)
-                    if ($lastArrivalTime !== null) {
-                        if ($depTime < ($lastArrivalTime + 45 * 60) || $depTime > ($lastArrivalTime + 24 * 3600)) {
-                            continue;
-                        }
                     }
 
                     $currentPathFlights[] = $flightDetails;
