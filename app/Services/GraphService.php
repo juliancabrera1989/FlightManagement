@@ -50,6 +50,7 @@ class GraphService
         return $earthRadius * $c;
     }
 
+
     /**
      * Dijkstra dinámico adaptado a cotas temporales y pesos reales
      */
@@ -104,10 +105,11 @@ class GraphService
                         continue;
                     }
 
-                    // 🔴 FILTRO 3: Escala lógica si no es el primer vuelo
-                    if ($arrivalTimeAtNode[$u] !== null && $startTimestamp !== null && $u != $start) {
-                        $minScale = $arrivalTimeAtNode[$u] + (45 * 60); // 45 min min
-                        $maxScale = $arrivalTimeAtNode[$u] + (48 * 60 * 60); // 48 hs max
+                    // 🔴 FILTRO 3: Escala lógica (SE REQUERE SIEMPRE QUE NO SEA EL NODO INICIAL)
+                    // Garantiza que la salida del siguiente tramo sea posterior a la llegada del anterior (mínimo 45 min, máximo 48 hs)
+                    if ($u != $start && $arrivalTimeAtNode[$u] !== null) {
+                        $minScale = $arrivalTimeAtNode[$u] + (45 * 60); // 45 minutos mínimo de conexión
+                        $maxScale = $arrivalTimeAtNode[$u] + (48 * 60 * 60); // 48 horas máximo
                         if ($depTime < $minScale || $depTime > $maxScale) {
                             continue;
                         }
@@ -116,7 +118,6 @@ class GraphService
                     // Cálculo del peso según criterio
                     if ($criteria === 'time') {
                         // El peso para TIEMPO es la hora absoluta de llegada al destino del tramo
-                        // Esto obliga a Dijkstra a minimizar la hora final de aterrizaje en la simulación.
                         $weight = $arrTime;
                     } else {
                         $weight = $flightDetails[$criteria];
@@ -170,10 +171,27 @@ class GraphService
         return $allPaths;
     }
 
-    protected function dfs($currentAirport, $destination, &$visited, $currentPathFlights, &$allPaths, $lastArrivalTime, $depth, $startTimestamp, $endTimestamp)
-    {
-        if ($depth > 3) return;
-        if (isset($visited[$currentAirport]) && $visited[$currentAirport]) return;
+protected function dfs(
+        $currentAirport, 
+        $destination, 
+        &$visited, 
+        $currentPathFlights, 
+        &$allPaths, 
+        $lastArrivalTime, 
+        $depth, 
+        $startTimestamp, 
+        $endTimestamp,
+        $maxPaths = 50 // 👈 FRENO DE MANO
+    ) {
+        // Cortar si ya juntamos las rutas suficientes
+        if (count($allPaths) >= $maxPaths) {
+            return;
+        }
+
+        // Poda por profundidad (máximo 3 tramos)
+        if ($depth > 3) {
+            return;
+        }
 
         if ($currentAirport == $destination) {
             $allPaths[] = $currentPathFlights;
@@ -184,23 +202,40 @@ class GraphService
 
         if (isset($this->graph[$currentAirport])) {
             foreach ($this->graph[$currentAirport] as $nextAirport => $listOfFlights) {
+                
+                if (isset($visited[$nextAirport]) && $visited[$nextAirport]) {
+                    continue;
+                }
+
                 foreach ($listOfFlights as $flightDetails) {
+                    
+                    // Si ya llegamos al límite en medio de las iteraciones, salir inmediatamente
+                    if (count($allPaths) >= $maxPaths) {
+                        break;
+                    }
+
                     $depTime = strtotime($flightDetails['flight']->departure_time);
                     $arrTime = strtotime($flightDetails['flight']->arrival_time);
 
-                    // Cotas
-                    if ($startTimestamp && $lastArrivalTime === null && $depTime < $startTimestamp) continue;
-                    if ($endTimestamp && $arrTime > $endTimestamp) continue;
+                    // Poda por fecha inicial
+                    if ($startTimestamp && $lastArrivalTime === null && $depTime < $startTimestamp) {
+                        continue;
+                    }
 
-                    // Escala
+                    // Poda por fecha límite (ventana de días)
+                    if ($endTimestamp && $arrTime > $endTimestamp) {
+                        continue;
+                    }
+
+                    // Poda de tiempos de escala (entre 45 min y 24 horas)
                     if ($lastArrivalTime !== null) {
-                        if ($depTime < ($lastArrivalTime + 45 * 60) || $depTime > ($lastArrivalTime + 48 * 3600)) {
+                        if ($depTime < ($lastArrivalTime + 45 * 60) || $depTime > ($lastArrivalTime + 24 * 3600)) {
                             continue;
                         }
                     }
 
                     $currentPathFlights[] = $flightDetails;
-                    
+
                     $this->dfs(
                         $nextAirport, 
                         $destination, 
@@ -210,7 +245,8 @@ class GraphService
                         $arrTime,
                         $depth + 1,
                         $startTimestamp,
-                        $endTimestamp
+                        $endTimestamp,
+                        $maxPaths
                     );
 
                     array_pop($currentPathFlights);

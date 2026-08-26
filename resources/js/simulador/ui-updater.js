@@ -67,3 +67,40 @@ export function updateProgressUI(crit, acumulado, infoVuelo, fraction) {
         elStatus.innerText = fraction >= 1.0 ? 'LANDED' : 'FLYING';
     }
 }
+
+
+// ui-updater.js
+
+export function mostrarCartelFinSimulacion() {
+    let cartel = document.getElementById('sim-finished-alert');
+    
+    // Si no existe el elemento en la vista, lo crea dinámicamente en pantalla
+    if (!cartel) {
+        cartel = document.createElement('div');
+        cartel.id = 'sim-finished-alert';
+        cartel.className = 'alert alert-success alert-dismissible fade show shadow-lg position-fixed bottom-0 end-0 m-4';
+        cartel.style.zIndex = '9999';
+        cartel.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <span style="font-size: 1.5rem;">🏁</span>
+                <div>
+                    <strong>¡Simulación Finalizada!</strong><br>
+                    Todos los criterios han llegado a destino. Puedes revisar los radares.
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-dark ms-3" onclick="window.reiniciarSimulacion()">
+                    🔄 Reiniciar
+                </button>
+            </div>
+        `;
+        document.body.appendChild(cartel);
+    } else {
+        cartel.style.display = 'block';
+    }
+}
+
+export function ocultarCartelFinSimulacion() {
+    const cartel = document.getElementById('sim-finished-alert');
+    if (cartel) {
+        cartel.style.display = 'none';
+    }
+}

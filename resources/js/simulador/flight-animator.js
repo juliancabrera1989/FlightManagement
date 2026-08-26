@@ -1,12 +1,10 @@
-// flight-animator.js
-import { actualizarRadarUI, resetearRadaresUI } from './ui-updater';
+// import { actualizarRadarUI, resetearRadaresUI } from './ui-updater';
+import { actualizarRadarUI, resetearRadaresUI, mostrarCartelFinSimulacion, ocultarCartelFinSimulacion } from './ui-updater';
 import { animateMarker } from './marker-mover';
 
 window.multiplicadorVelocidad = window.multiplicadorVelocidad || 1;
 window.simulacionPausada = false;
 window.tiempoSimulacionActual = null;
-
-// Colección global de todos los eventos (despegues y aterrizajes) para el Step
 window.cronogramaEventosSimulacion = [];
 
 function parseFechaUTC(dateStr) {
@@ -17,9 +15,9 @@ function parseFechaUTC(dateStr) {
 
 function formatearHorasMins(ms) {
     if (ms <= 0 || isNaN(ms)) return "00:00";
-    let totalSeg = Math.floor(ms / 1000);
-    let hrs = String(Math.floor(totalSeg / 3600)).padStart(2, '0');
-    let mins = String(Math.floor((totalSeg % 3600) / 60)).padStart(2, '0');
+    const totalSeg = Math.floor(ms / 1000);
+    const hrs = String(Math.floor(totalSeg / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((totalSeg % 3600) / 60)).padStart(2, '0');
     return `${hrs}:${mins}`;
 }
 
@@ -31,10 +29,9 @@ function iniciarRelojGlobal() {
 
     window.tiempoSimulacionActual = new Date(tInicio.getTime());
     const clockGlobalEl = document.getElementById('global-sim-clock');
-
     const tickIntervalMs = 20;
 
-    let globalInterval = setInterval(() => {
+    const globalInterval = setInterval(() => {
         if (window.simulacionPausada) return;
 
         if (window.tiempoSimulacionActual >= tFin) {
@@ -44,7 +41,7 @@ function iniciarRelojGlobal() {
             return;
         }
 
-        let avanceMs = (tickIntervalMs / 1000) * 3600000 * window.multiplicadorVelocidad;
+        const avanceMs = (tickIntervalMs / 1000) * 3600000 * window.multiplicadorVelocidad;
         window.tiempoSimulacionActual = new Date(window.tiempoSimulacionActual.getTime() + avanceMs);
 
         actualizarUIRelojes(tInicio.getTime(), clockGlobalEl);
@@ -70,34 +67,26 @@ function actualizarUIRelojes(inicioMs, clockGlobalEl) {
 
     const elapsedEl = document.getElementById('global-sim-elapsed');
     if (elapsedEl) {
-        let diffMs = window.tiempoSimulacionActual.getTime() - inicioMs;
-        let diffSeg = Math.floor(diffMs / 1000);
-        let hrs = String(Math.floor(diffSeg / 3600)).padStart(2, '0');
-        let mins = String(Math.floor((diffSeg % 3600) / 60)).padStart(2, '0');
-        let secs = String(diffSeg % 60).padStart(2, '0');
+        const diffMs = window.tiempoSimulacionActual.getTime() - inicioMs;
+        const diffSeg = Math.floor(diffMs / 1000);
+        const hrs = String(Math.floor(diffSeg / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((diffSeg % 3600) / 60)).padStart(2, '0');
+        const secs = String(diffSeg % 60).padStart(2, '0');
         elapsedEl.innerText = `${hrs}:${mins}:${secs}`;
     }
 }
 
-// LÓGICA DEL BOTÓN STEP (Avanzar al siguiente despegue o aterrizaje)
 window.avanzarSiguienteEvento = function() {
     if (!window.tiempoSimulacionActual || !window.cronogramaEventosSimulacion.length) return;
 
     const tActualMs = window.tiempoSimulacionActual.getTime();
-
-    // Buscar el primer evento que sea strictly mayor que el tiempo actual
     const proximoEventoMs = window.cronogramaEventosSimulacion.find(tMs => tMs > tActualMs + 1000);
 
     if (proximoEventoMs) {
-        // Pausar si no estaba pausado
         if (!window.simulacionPausada) {
             window.togglePausaSimulacion();
         }
-
-        // Mover el tiempo exacto al próximo evento
         window.tiempoSimulacionActual = new Date(proximoEventoMs);
-
-        // Forzar actualización visual en los relojes
         const tInicio = parseFechaUTC(window.earliest_departure_time);
         const clockGlobalEl = document.getElementById('global-sim-clock');
         actualizarUIRelojes(tInicio.getTime(), clockGlobalEl);
@@ -149,83 +138,6 @@ window.actualizarSliderVelocidad = function(val) {
     if (txt) txt.innerText = `x${parseFloat(val).toFixed(1)}`;
 };
 
-window.ejecutarSimulacion = function(map) {
-    var centerX = 0, centerY = 0;
-    var totalAirportsCount = 0;
-    window.avionesActivosEnSimulacion = {};
-    
-    // Recolectar todos los timestamps de despegues y aterrizajes para el Step
-    let conjuntoEventos = new Set();
-
-    window.paths.forEach(path => {
-        path.flights.forEach(f => {
-            const depMs = parseFechaUTC(f.departure_time).getTime();
-            const arrMs = parseFechaUTC(f.arrival_time).getTime();
-            if (depMs) conjuntoEventos.add(depMs);
-            if (arrMs) conjuntoEventos.add(arrMs);
-        });
-    });
-
-    window.cronogramaEventosSimulacion = Array.from(conjuntoEventos).sort((a, b) => a - b);
-
-    iniciarRelojGlobal();
-
-    window.paths.forEach(path => {
-        let localPlaneR = [];
-        let idxAirport = 0;
-
-        var flightPlanCoordinates = path.airports.map(airport => {
-            let latitude = parseFloat(airport.latitude);
-            let longitude = parseFloat(airport.longitude);
-            centerX += latitude; centerY += longitude; totalAirportsCount++;
-
-            if(idxAirport != 0 && idxAirport != (path.airports.length - 1)) {
-                localPlaneR.push({lat: latitude, lng: longitude});
-                localPlaneR.push({lat: latitude, lng: longitude});
-            } else {
-                localPlaneR.push({lat: latitude, lng: longitude});
-            }
-            idxAirport++;
-            return new google.maps.LatLng(latitude, longitude);
-        });
-
-        let listaAnimacion = []; 
-        let pathVuelosData = [];
-        let flightsCount = path.flights.length;
-        
-        if (flightsCount === 1) {
-            if (flightPlanCoordinates[1]) {
-                listaAnimacion.push([flightPlanCoordinates[0], flightPlanCoordinates[1]]);
-            }
-            pathVuelosData.push(path.flights[0]);
-        } 
-        else {
-            let jLocal = 0;
-            while (jLocal < localPlaneR.length) {
-                let currentFlightIdx = Math.floor(jLocal / 2);
-                let flightObj = path.flights[currentFlightIdx];
-                if (!flightObj) break;
-
-                if (localPlaneR[jLocal + 0] && localPlaneR[jLocal + 1]) {
-                    listaAnimacion.push([
-                        new google.maps.LatLng(localPlaneR[jLocal + 0].lat, localPlaneR[jLocal + 0].lng),
-                        new google.maps.LatLng(localPlaneR[jLocal + 1].lat, localPlaneR[jLocal + 1].lng)
-                    ]);
-                }
-                pathVuelosData.push(flightObj);
-                jLocal = jLocal + 2; 
-            }
-        }
-
-        animateMarkers(listaAnimacion, path.criterion, pathVuelosData);
-    });
-
-    if (totalAirportsCount > 0) {
-        centerX = centerX / totalAirportsCount; centerY = centerY / totalAirportsCount;
-    }
-    map.setOptions({ zoom: 2, center: new google.maps.LatLng(centerX, centerY), mapTypeId: google.maps.MapTypeId.TERRAIN });
-      
-
 function formatearProximoDespegue(fechaStr) {
     if (!fechaStr || fechaStr === "--:--") return "--:--";
     try {
@@ -244,7 +156,125 @@ function formatearProximoDespegue(fechaStr) {
     }
 }
 
-function animateMarkers(tramosCoords, crit, vuelosData) {
+window.ejecutarSimulacion = function(map) {
+    let centerX = 0, centerY = 0;
+    let totalAirportsCount = 0;
+    window.avionesActivosEnSimulacion = {};
+    
+    const conjuntoEventos = new Set();
+    
+    window.concurrenciaTramosGlobal = {};
+    window.ordenTramosGlobal = {};
+    window.tramosGlobalesCompartidos = {}; // 🌟 Almacena los criterios por vuelo y horario específico
+
+    const todosLosVuelosConCriterio = [];
+    window.paths.forEach(path => {
+        path.flights.forEach(f => {
+            todosLosVuelosConCriterio.push({
+                criterion: path.criterion,
+                departure_time_ms: parseFechaUTC(f.departure_time).getTime(),
+                departure_time: f.departure_time,
+                departure_airport_id: f.departure_airport_id,
+                arrival_airport_id: f.arrival_airport_id
+            });
+        });
+    });
+
+    todosLosVuelosConCriterio.sort((a, b) => a.departure_time_ms - b.departure_time_ms);
+
+    todosLosVuelosConCriterio.forEach(v => {
+        const claveTramo = `${v.departure_airport_id}-${v.arrival_airport_id}`;
+        const claveCompartidaHorario = `${claveTramo}-${v.departure_time}`;
+
+        // Mapeo general para Pirámide de Grosores
+        if (!window.concurrenciaTramosGlobal[claveTramo]) {
+            window.concurrenciaTramosGlobal[claveTramo] = 0;
+            window.ordenTramosGlobal[claveTramo] = [];
+        }
+        if (!window.ordenTramosGlobal[claveTramo].includes(v.criterion)) {
+            window.concurrenciaTramosGlobal[claveTramo]++;
+            window.ordenTramosGlobal[claveTramo].push(v.criterion);
+        }
+
+        // Mapeo específico para Puntos Multicolores Intercalados
+        if (!window.tramosGlobalesCompartidos[claveCompartidaHorario]) {
+            window.tramosGlobalesCompartidos[claveCompartidaHorario] = [];
+        }
+        if (!window.tramosGlobalesCompartidos[claveCompartidaHorario].includes(v.criterion)) {
+            window.tramosGlobalesCompartidos[claveCompartidaHorario].push(v.criterion);
+        }
+    });
+
+    window.paths.forEach(path => {
+        path.flights.forEach(f => {
+            const depMs = parseFechaUTC(f.departure_time).getTime();
+            const arrMs = parseFechaUTC(f.arrival_time).getTime();
+            if (depMs) conjuntoEventos.add(depMs);
+            if (arrMs) conjuntoEventos.add(arrMs);
+        });
+    });
+
+    window.cronogramaEventosSimulacion = Array.from(conjuntoEventos).sort((a, b) => a - b);
+
+    iniciarRelojGlobal();
+
+    window.paths.forEach(path => {
+        const localPlaneR = [];
+        let idxAirport = 0;
+
+        const flightPlanCoordinates = path.airports.map(airport => {
+            const latitude = parseFloat(airport.latitude);
+            const longitude = parseFloat(airport.longitude);
+            centerX += latitude; centerY += longitude; totalAirportsCount++;
+
+            if(idxAirport !== 0 && idxAirport !== (path.airports.length - 1)) {
+                localPlaneR.push({lat: latitude, lng: longitude});
+                localPlaneR.push({lat: latitude, lng: longitude});
+            } else {
+                localPlaneR.push({lat: latitude, lng: longitude});
+            }
+            idxAirport++;
+            return new google.maps.LatLng(latitude, longitude);
+        });
+
+        const listaAnimacion = []; 
+        const pathVuelosData = [];
+        const flightsCount = path.flights.length;
+        
+        if (flightsCount === 1) {
+            if (flightPlanCoordinates[1]) {
+                listaAnimacion.push([flightPlanCoordinates[0], flightPlanCoordinates[1]]);
+            }
+            pathVuelosData.push(path.flights[0]);
+        } 
+        else {
+            let jLocal = 0;
+            while (jLocal < localPlaneR.length) {
+                const currentFlightIdx = Math.floor(jLocal / 2);
+                const flightObj = path.flights[currentFlightIdx];
+                if (!flightObj) break;
+
+                if (localPlaneR[jLocal + 0] && localPlaneR[jLocal + 1]) {
+                    listaAnimacion.push([
+                        new google.maps.LatLng(localPlaneR[jLocal + 0].lat, localPlaneR[jLocal + 0].lng),
+                        new google.maps.LatLng(localPlaneR[jLocal + 1].lat, localPlaneR[jLocal + 1].lng)
+                    ]);
+                }
+                pathVuelosData.push(flightObj);
+                jLocal = jLocal + 2; 
+            }
+        }
+
+        animateMarkers(map, listaAnimacion, path.criterion, pathVuelosData);
+    });
+
+    if (totalAirportsCount > 0) {
+        centerX = centerX / totalAirportsCount; centerY = centerY / totalAirportsCount;
+    }
+    map.setOptions({ zoom: 2, center: new google.maps.LatLng(centerX, centerY), mapTypeId: google.maps.MapTypeId.TERRAIN });
+};
+
+function animateMarkers(map, tramosCoords, crit, vuelosData) {
     let currentPathIndex = 0;
     let estaVolando = false;
 
@@ -255,19 +285,19 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
     const tiempoPrimerDespegue = parseFechaUTC(vuelosData[0].departure_time).getTime();
     const tiempoUltimoAterrizaje = parseFechaUTC(vuelosData[vuelosData.length - 1].arrival_time).getTime();
 
-    let prioridadCapa = 10;
-    let colorHex = '#198754'; // Verde (Distance)
+    let baseZIndex = 10;
+    let colorHex = '#198754';
 
     if (crit === 'time') {
-        prioridadCapa = 20;
-        colorHex = '#0d6efd'; // Azul (Time)
+        baseZIndex = 20;
+        colorHex = '#0d6efd';
     } else if (crit === 'cost') {
-        prioridadCapa = 30;
-        colorHex = '#dc3545'; // Rojo (Cost)
+        baseZIndex = 30;
+        colorHex = '#dc3545';
     }
 
     const polylineRastro = new google.maps.Polyline({
-        path: [], geodesic: true, strokeOpacity: 0, zIndex: prioridadCapa, map: map
+        path: [], geodesic: true, strokeOpacity: 0, zIndex: baseZIndex, map: map
     });
     window.todasLasPolilynesRastro.push(polylineRastro);
 
@@ -285,7 +315,7 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
         position: origenInicial,
         map: map,
         title: `Esperando despegue (${crit.toUpperCase()})`,
-        zIndex: prioridadCapa + 5,
+        zIndex: baseZIndex + 5,
         icon: {
             url: crearSvgPlane(1.0),
             scaledSize: new google.maps.Size(32, 32),
@@ -298,7 +328,7 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
     let blinkState = false;
     let lastBlinkTime = Date.now();
 
-    let syncLoop = setInterval(() => {
+    const syncLoop = setInterval(() => {
         if (window.simulacionPausada) return;
 
         const tActual = window.tiempoSimulacionActual ? window.tiempoSimulacionActual.getTime() : 0;
@@ -316,6 +346,7 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
             const destinoFinalCoords = tramosCoords[tramosCoords.length - 1][1];
             waitingMarker.setPosition(destinoFinalCoords);
             waitingMarker.setOpacity(1.0);
+            waitingMarker.setZIndex(5);
             waitingMarker.setIcon({
                 url: crearSvgPlane(1.0),
                 scaledSize: new google.maps.Size(32, 32),
@@ -323,7 +354,7 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
             });
             waitingMarker.setVisible(true);
 
-            let tiempoTotalFinal = tiempoUltimoAterrizaje - tiempoPrimerDespegue;
+            const tiempoTotalFinal = tiempoUltimoAterrizaje - tiempoPrimerDespegue;
 
             actualizarRadarUI(crit, {
                 estado: "ARRIVED",
@@ -334,17 +365,30 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
                 costoProg: costoAcumulado
             });
 
+            // --- DENTRO DE animateMarkers() en flight-animator.js ---
+
             if (!window.controlCicloDijkstra.criteriosFinalizados.includes(crit)) {
                 window.controlCicloDijkstra.criteriosFinalizados.push(crit);
             }
 
+             // Verificar si TODOS los criterios activos terminaron
             if (window.controlCicloDijkstra.criteriosFinalizados.length === window.controlCicloDijkstra.criteriosActivos.length) {
-                clearInterval(syncLoop);
-                setTimeout(() => {
-                    if (window.reiniciarSimulacion) window.reiniciarSimulacion();
-                }, 3000 / window.multiplicadorVelocidad);
+            clearInterval(syncLoop);
+            
+            // 1. Pausar formalmente la simulación
+            window.simulacionPausada = true;
+
+            // 2. Cambiar el botón Play/Pausa
+            const btnPlayPause = document.getElementById('btn-play-pause');
+            if (btnPlayPause) {
+                btnPlayPause.innerHTML = '▶️ Reanudar';
+                btnPlayPause.className = 'btn btn-success fw-bold';
             }
-            return;
+
+            // 3. Mostrar cartel de simulación finalizada
+            mostrarCartelFinSimulacion();
+        }
+        return;
         }
 
         const infoVuelo = vuelosData[currentPathIndex];
@@ -386,13 +430,13 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
                 distTramoKm = google.maps.geometry.spherical.computeDistanceBetween(originCoords, destCoords) / 1000;
             }
 
-            let duracionTramoMs = tLlegadaVuelo - tSalidaVuelo;
-            let fraccionTramo = Math.min(1, Math.max(0, (tActual - tSalidaVuelo) / duracionTramoMs));
+            const duracionTramoMs = tLlegadaVuelo - tSalidaVuelo;
+            const fraccionTramo = Math.min(1, Math.max(0, (tActual - tSalidaVuelo) / duracionTramoMs));
 
-            let costoTramoActual = parseFloat(infoVuelo.ticket_cost || infoVuelo.price || infoVuelo.cost || 0);
-            let costoMostrar = costoAcumulado + costoTramoActual;
-            let distanciaMostrar = distanciaAcumulada + (distTramoKm * fraccionTramo);
-            let msEnVueloEsteTramo = (tLlegadaVuelo - tSalidaVuelo) * fraccionTramo;
+            const costoTramoActual = parseFloat(infoVuelo.ticket_cost || infoVuelo.price || infoVuelo.cost || 0);
+            const costoMostrar = costoAcumulado + costoTramoActual;
+            const distanciaMostrar = distanciaAcumulada + (distTramoKm * fraccionTramo);
+            const msEnVueloEsteTramo = (tLlegadaVuelo - tSalidaVuelo) * fraccionTramo;
 
             let proximoDespegueStr = "ÚLTIMO TRAMO";
             if (currentPathIndex + 1 < vuelosData.length) {
@@ -410,9 +454,14 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
 
             if (!estaVolando) {
                 estaVolando = true;
-                let duracionAnimacionMs = (tLlegadaVuelo - tSalidaVuelo) / 3600000 * 1000 / window.multiplicadorVelocidad;
+                const duracionAnimacionMs = (tLlegadaVuelo - tSalidaVuelo) / 3600000 * 1000 / window.multiplicadorVelocidad;
 
-                animateMarker(map, originCoords, destCoords, duracionAnimacionMs, crit, infoVuelo, 0, polylineRastro, () => {
+                let acumuladoActual = 0;
+                if (crit === 'cost') acumuladoActual = costoAcumulado;
+                if (crit === 'distance') acumuladoActual = distanciaAcumulada;
+                if (crit === 'time') acumuladoActual = msTiempoVueloAcumulado / 60000;
+
+                animateMarker(map, originCoords, destCoords, duracionAnimacionMs, crit, infoVuelo, acumuladoActual, polylineRastro, (nuevoAcumulado) => {
                     msTiempoVueloAcumulado += (tLlegadaVuelo - tSalidaVuelo);
                     distanciaAcumulada += distTramoKm;
                     costoAcumulado += costoTramoActual;
@@ -426,4 +475,3 @@ function animateMarkers(tramosCoords, crit, vuelosData) {
 
     window.todosLosIntervalos.push(syncLoop);
 }
-};
