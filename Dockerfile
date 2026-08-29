@@ -35,7 +35,5 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
 
-RUN php artisan config:clear
-RUN php artisan cache:clear
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80
+CMD php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80
