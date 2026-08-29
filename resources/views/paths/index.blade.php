@@ -32,26 +32,26 @@
                     </div>
                 </div>
 
-                <!-- Cotas Temporales (Opcionales) -->
+                <!-- Datetime bounds (Optional) -->
                 <div class="card bg-white border p-3 mb-3">
-                    <label class="form-label fw-bold text-primary mb-2">⏱️ Cotas Temporales (Opcional)</label>
+                    <label class="form-label fw-bold text-primary mb-2">⏱️ Date/time bounds (Optional)</label>
                     <div class="row">
                         <div class="col-md-6 mb-2">
-                            <label for="start_date" class="form-label small text-muted">Cota Inferior (Desde)</label>
+                            <label for="start_date" class="form-label small text-muted">Lower bound(From)</label>
                             <input type="datetime-local" name="start_date" id="start_date" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-6 mb-2">
-                            <label for="end_date" class="form-label small text-muted">Cota Superior (Hasta)</label>
+                            <label for="end_date" class="form-label small text-muted"> Upper bound(Until)</label>
                             <input type="datetime-local" name="end_date" id="end_date" class="form-control form-control-sm">
                         </div>
                     </div>
                     <small class="text-muted fst-italic style="font-size: 0.75rem;">
-                        * Sin cotas: busca globalmente.<br>
-                        * Solo Cota Superior: parte desde la fecha/hora actual.
+                        * No Bounds. Search limitlessly<br>
+                        * Only upper bound: it starts on the current date/time.
                     </small>
                 </div>
 
-                <!-- Criterios -->
+                <!-- Criteria -->
                 <div id="criteria-section" class="mb-3">
                     <label class="form-label d-block fw-bold">Sort Criteria</label>
                     <div class="d-flex gap-3">
@@ -74,14 +74,14 @@
 
                 <!-- Modo de Búsqueda -->
                 <div class="mb-4">
-                    <label class="form-label d-block fw-bold">Modo de Búsqueda:</label>
+                    <label class="form-label d-block fw-bold">Search mode:</label>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="search_type" id="mode_optimal" value="optimal" checked onclick="toggleCriteria(true)">
-                        <label class="form-check-label" for="mode_optimal">⭐ Rutas Óptimas (Dijkstra)</label>
+                        <label class="form-check-label" for="mode_optimal">⭐ Optimal routes (Dijkstra)</label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="search_type" id="mode_all" value="all_alternative" onclick="toggleCriteria(false)">
-                        <label class="form-check-label" for="mode_all">🌍 Explorar Todas las Alternativas (DFS)</label>
+                        <label class="form-check-label" for="mode_all">🌍 Explore all the alternatives (DFS)</label>
                     </div>
                 </div>
 

@@ -6,7 +6,7 @@
 
     @if($allPaths->isEmpty())
         <div class="alert alert-warning text-center">
-            No se encontraron rutas disponibles con transbordos lógicos para este destino.
+            No available paths found for that pair origin-destination.
         </div>
     @else
         <div class="row">

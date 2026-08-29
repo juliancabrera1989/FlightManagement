@@ -10,7 +10,7 @@ use App\Http\Middleware\EnsureEmployee;
 
 /*
 |--------------------------------------------------------------------------
-| 1. RUTAS PÚBLICAS (Accesibles sin iniciar sesión)
+| 1. RUTAS PÚBLICAS (Accesibles para cualquiera)
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
@@ -31,14 +31,7 @@ Route::get('/boards', function (Illuminate\Http\Request $request) {
     return view('boards', compact('airportId'));
 })->name('boards');
 
-// Autenticación (Login / Register / Logout)
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register.form');
-Route::post('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-// Rutas de API públicas
+// API pública
 Route::prefix('api')->group(function () {
     Route::get('/countries', [AirportController::class, 'countries']);
     Route::get('/airports', [AirportController::class, 'airportsByCountry']);
@@ -46,24 +39,36 @@ Route::prefix('api')->group(function () {
     Route::get('/airlines', [AirlineController::class, 'getAirlinesApi']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| 2. RUTAS SOLO PARA INVITADOS (Bloqueadas si YA iniciaste sesión)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['guest'])->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register.form');
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+});
 
 /*
 |--------------------------------------------------------------------------
-| 2. CAPA DE SEGURIDAD 1: Solo Usuarios Registrados (Pasajeros y Empleados)
+| 3. CAPA DE SEGURIDAD 1: Solo Usuarios Registrados (Pasajeros y Empleados)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+
+    // Cerrar sesión solo posible estando autenticado
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Vistas principales y buscadores
     Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
     Route::get('paths', [PathController::class, 'index'])->name('paths.index');
     Route::post('paths', [PathController::class, 'show'])->name('paths.show');
 
-
-
     /*
     |--------------------------------------------------------------------------
-    | 3. CAPA DE SEGURIDAD 2: Solo Empleados (Anidado dentro de auth)
+    | 4. CAPA DE SEGURIDAD 2: Solo Empleados (Anidado dentro de auth)
     |--------------------------------------------------------------------------
     */
     Route::middleware([EnsureEmployee::class])->group(function () {
@@ -85,7 +90,7 @@ Route::middleware(['auth'])->group(function () {
         
     });
 
-    // Rutas tipo Resource para ver listados/detalles internos (Excluyendo los formularios que van abajo)
+    // Rutas tipo Resource para ver listados/detalles internos
     Route::resource('airlines', AirlineController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('airports', AirportController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('flights', FlightController::class)->except(['index', 'create', 'store', 'destroy']);

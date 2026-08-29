@@ -218,7 +218,7 @@ footer {
             @endif
 
             @auth
-                {{-- Crear Vuelo: Tanto Empleados como Administradores --}}
+                {{-- Create Flight : Admin and employees --}}
                 @if(auth()->user()->isEmployee() || auth()->user()->isAdmin())
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('flights.create') ? 'active' : '' }}" href="{{ route('flights.create') }}">
@@ -279,18 +279,18 @@ footer {
                     <a class="nav-link {{ request()->is('register') ? 'active' : '' }}" href="{{ route('register') }}">Register</a>
                 </li>
             @else
-                {{-- Identificador de Usuario y Rol --}}
+                {{-- Rol & user identificator --}}
                 <li class="nav-item d-flex align-items-center ms-lg-3 my-2 my-lg-0">
                     <div class="d-flex align-items-center bg-dark bg-opacity-75 px-3 py-1 rounded-pill border border-secondary me-2">
                         <span class="text-white fw-semibold me-2 small">{{ Auth::user()->name }}</span>
                         
                         @if(Auth::user()->isEmployee() && Auth::user()->employee_type === 'airport')
                             <span class="badge bg-primary text-wrap">
-                                ✈️ Emp. Aeropuerto: {{ Auth::user()->airport->code ?? 'Asignado' }}
+                                ✈️ Airport Emp.: {{ Auth::user()->airport->code ?? 'Assigned' }}
                             </span>
                         @elseif(Auth::user()->isEmployee() && Auth::user()->employee_type === 'airline')
                             <span class="badge bg-info text-dark text-wrap">
-                                🛫 Emp. Aerolínea: {{ Auth::user()->airline->name ?? 'Asignada' }}
+                                🛫 Airline Emp.: {{ Auth::user()->airline->name ?? 'Assigned' }}
                             </span>
                         @elseif(Auth::user()->isAdmin())
                             <span class="badge bg-danger text-wrap">
@@ -298,7 +298,7 @@ footer {
                             </span>
                         @else
                             <span class="badge bg-secondary text-wrap">
-                                👤 Pasajero
+                                👤 Passenger
                             </span>
                         @endif
                     </div>

@@ -112,13 +112,13 @@
                 </div>
                 <hr class="my-1">
                 <div class="small text-dark lh-sm" style="font-size: 0.8rem;">
-                    <div>ESTADO: <span id="status-distance" class="solari-text text-success">IDLE</span></div>
-                    <div>PRÓX. DESPEGUE: <span id="next-departure-distance" class="fw-bold">--:--</span></div>
+                    <div>STATUS: <span id="status-distance" class="solari-text text-success">IDLE</span></div>
+                    <div>NEXT DEPARTURE: <span id="next-departure-distance" class="fw-bold">--:--</span></div>
                     <hr class="my-1">
-                    <div>⏱️ TIEMPO EN VUELO: <span id="flight-time-distance">00:00:00</span></div>
-                    <div>⏳ TIEMPO TOTAL: <span id="total-time-distance">00:00</span> / {{ floor($distTotalMinutes / 60) }}:{{ sprintf('%02d', $distTotalMinutes % 60) }} hrs</div>
-                    <div>📏 DISTANCIA: <span id="dist-prog-distance">0.00</span> / {{ number_format($paths['distance']->total_distance / 1000, 2) }} km</div>
-                    <div>💵 COSTO ACUMULADO: $<span id="cost-prog-distance">0.00</span> / ${{ number_format($paths['distance']->total_cost, 2) }}</div>
+                    <div>⏱️ FLIGHT TIME: <span id="flight-time-distance">00:00:00</span></div>
+                    <div>⏳ TOTAL TIME: <span id="total-time-distance">00:00</span> / {{ floor($distTotalMinutes / 60) }}:{{ sprintf('%02d', $distTotalMinutes % 60) }} hrs</div>
+                    <div>📏 DISTANCE: <span id="dist-prog-distance">0.00</span> / {{ number_format($paths['distance']->total_distance / 1000, 2) }} km</div>
+                    <div>💵 ADDED COST: $<span id="cost-prog-distance">0.00</span> / ${{ number_format($paths['distance']->total_cost, 2) }}</div>
                 </div>
             </div>
         @endif
@@ -137,13 +137,13 @@
                 </div>
                 <hr class="my-1">
                 <div class="small text-dark lh-sm" style="font-size: 0.8rem;">
-                    <div>ESTADO: <span id="status-time" class="solari-text text-primary">IDLE</span></div>
-                    <div>PRÓX. DESPEGUE: <span id="next-departure-time" class="fw-bold">--:--</span></div>
+                    <div>STATUS: <span id="status-time" class="solari-text text-primary">IDLE</span></div>
+                    <div>NEXT DEPARTURE: <span id="next-departure-time" class="fw-bold">--:--</span></div>
                     <hr class="my-1">
-                    <div>⏱️ TIEMPO EN VUELO: <span id="flight-time-time">00:00:00</span></div>
-                    <div>⏳ TIEMPO TOTAL: <span id="total-time-time">00:00</span> / {{ floor($timeTotalMinutes / 60) }}:{{ sprintf('%02d', $timeTotalMinutes % 60) }} hrs</div>
-                    <div>📏 DISTANCIA: <span id="dist-prog-time">0.00</span> / {{ number_format($paths['time']->total_distance / 1000, 2) }} km</div>
-                    <div>💵 COSTO ACUMULADO: $<span id="cost-prog-time">0.00</span> / ${{ number_format($paths['time']->total_cost, 2) }}</div>
+                    <div>⏱️ FLIGHT TIME: <span id="flight-time-time">00:00:00</span></div>
+                    <div>⏳ TOTAL TIME: <span id="total-time-time">00:00</span> / {{ floor($timeTotalMinutes / 60) }}:{{ sprintf('%02d', $timeTotalMinutes % 60) }} hrs</div>
+                    <div>📏 DISTANCE: <span id="dist-prog-time">0.00</span> / {{ number_format($paths['time']->total_distance / 1000, 2) }} km</div>
+                    <div>💵 ADDED COST: $<span id="cost-prog-time">0.00</span> / ${{ number_format($paths['time']->total_cost, 2) }}</div>
                 </div>
             </div>
         @endif
@@ -162,13 +162,13 @@
                 </div>
                 <hr class="my-1">
                 <div class="small text-dark lh-sm" style="font-size: 0.8rem;">
-                    <div>ESTADO: <span id="status-cost" class="solari-text text-danger">IDLE</span></div>
-                    <div>PRÓX. DESPEGUE: <span id="next-departure-cost" class="fw-bold">--:--</span></div>
+                    <div>STATUS: <span id="status-cost" class="solari-text text-danger">IDLE</span></div>
+                    <div>NEXT DEPARTURE: <span id="next-departure-cost" class="fw-bold">--:--</span></div>
                     <hr class="my-1">
-                    <div>⏱️ TIEMPO EN VUELO: <span id="flight-time-cost">00:00:00</span></div>
-                    <div>⏳ TIEMPO TOTAL: <span id="total-time-cost">00:00</span> / {{ floor($costTotalMinutes / 60) }}:{{ sprintf('%02d', $costTotalMinutes % 60) }} hrs</div>
-                    <div>📏 DISTANCIA: <span id="dist-prog-cost">0.00</span> / {{ number_format($paths['cost']->total_distance / 1000, 2) }} km</div>
-                    <div>💵 COSTO ACUMULADO: $<span id="cost-prog-cost">0.00</span> / ${{ number_format($paths['cost']->total_cost, 2) }}</div>
+                    <div>⏱️ FLIGHT TIME: <span id="flight-time-cost">00:00:00</span></div>
+                    <div>⏳ TOTAL TIME: <span id="total-time-cost">00:00</span> / {{ floor($costTotalMinutes / 60) }}:{{ sprintf('%02d', $costTotalMinutes % 60) }} hrs</div>
+                    <div>📏 DISTANCE: <span id="dist-prog-cost">0.00</span> / {{ number_format($paths['cost']->total_distance / 1000, 2) }} km</div>
+                    <div>💵 ADDED COST: $<span id="cost-prog-cost">0.00</span> / ${{ number_format($paths['cost']->total_cost, 2) }}</div>
                 </div>
             </div>
         @endif
@@ -214,8 +214,8 @@
                 <div class="d-flex gap-2 small font-monospace">
                     <span class="badge bg-secondary">💵 ${{ number_format($path->total_cost, 2) }}</span>
                     <span class="badge bg-info text-dark">📏 {{ number_format($path->total_distance / 1000, 2) }} km</span>
-                    <span class="badge bg-light text-dark">✈️ Aire: {{ floor($inAirMinutes / 60) }}h {{ sprintf('%02d', $inAirMinutes % 60) }}m</span>
-                    <span class="badge bg-primary">⏱️ Total: {{ floor($path->total_time / 60) }}h {{ sprintf('%02d', $path->total_time % 60) }}m</span>
+                    <span class="badge bg-light text-dark">✈️ Air time: {{ floor($inAirMinutes / 60) }}h {{ sprintf('%02d', $inAirMinutes % 60) }}m</span>
+                    <span class="badge bg-primary">⏱️ Total time: {{ floor($path->total_time / 60) }}h {{ sprintf('%02d', $path->total_time % 60) }}m</span>
                 </div>
             </div>
             <div class="card-body p-2">

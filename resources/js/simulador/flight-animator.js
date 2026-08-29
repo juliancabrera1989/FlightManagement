@@ -455,7 +455,7 @@ function animateMarkers(map, tramosCoords, crit, vuelosData) {
             const distanciaMostrar = distanciaAcumulada + (distTramoKm * fraccionTramo);
             const msEnVueloEsteTramo = (tLlegadaVuelo - tSalidaVuelo) * fraccionTramo;
 
-            let proximoDespegueStr = "ÚLTIMO TRAMO";
+            let proximoDespegueStr = "LAST FLIGHT";
             if (currentPathIndex + 1 < vuelosData.length) {
                 proximoDespegueStr = formatearProximoDespegue(vuelosData[currentPathIndex + 1].departure_time);
             }
