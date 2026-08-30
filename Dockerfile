@@ -39,8 +39,8 @@ RUN npm run build
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-
-COPY nginx.conf /etc/nginx/sites-available/default
+# Sobrescribir directamente el archivo de configuración por defecto de Nginx
+COPY nginx.conf /etc/nginx/sites-enabled/default
 
 # Copiar y dar permisos al script de arranque
 COPY start.sh /usr/local/bin/start.sh
