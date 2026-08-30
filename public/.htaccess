@@ -4,9 +4,6 @@
     </IfModule>
 
     RewriteEngine On
-    
-    # 🔹 Añade esta línea exacta para guiar a Apache en XAMPP:
-    RewriteBase /flightManagement/public/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
