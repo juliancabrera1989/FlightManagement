@@ -26,10 +26,15 @@
         
     </div>
 </div>
-<script>
+<!-- <script>
     window.INITIAL_AIRPORT_ID = {{ $airportId ?? 'null' }};
     
     // 🎯 Le pasamos a React la URL exacta de la carpeta public de Laravel
+    window.APP_URL = "{{ url('/') }}"; 
+</script> -->
+<script>
+    window.Laravel = { baseUrl: "{{ url('/') }}" };
+    window.INITIAL_AIRPORT_ID = {{ $airportId ?? 'null' }};
     window.APP_URL = "{{ url('/') }}"; 
 </script>
     @viteReactRefresh
