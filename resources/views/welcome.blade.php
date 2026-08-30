@@ -5,7 +5,7 @@
 @section('content')
 
   <section id="intro" class="text-center text-white" 
-    style="background: url('../resources/images/plane2.gif') center center / cover no-repeat; height: 100vh; display: flex; align-items: center; justify-content: center; padding-top: 70px;">
+    style="background: url('{{ asset('images/plane2.gif') }}') center center / cover no-repeat; height: 100vh; display: flex; align-items: center; justify-content: center; padding-top: 70px;">
     <div class="bg-dark bg-opacity-25 p-4 rounded">
       <h1 class="display-4 fw-bold">Welcome to the Flight Management System</h1>
       <p class="lead">Manage global flights, find routes, and simulate journeys in real-time.</p>
@@ -21,7 +21,7 @@
     <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel" style="max-width: 900px; margin: 0 auto; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div class="carousel-inner">
         <div class="carousel-item active" style="position: relative; height: 450px;">
-          <img src="../resources/images/JFK.png" class="d-block w-100 h-100" style="object-fit: cover;" alt="JFK Airport">
+          <img src="{{ asset('images/JFK.png') }}" class="d-block w-100 h-100" style="object-fit: cover;" alt="JFK Airport">
           <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.85));"></div>
           <div class="carousel-caption d-none d-md-block" style="bottom: 40px; z-index: 10;">
             <h3 class="display-6 fw-bold">JFK • New York 🇺🇸</h3>
@@ -31,7 +31,7 @@
         </div>
 
         <div class="carousel-item" style="position: relative; height: 450px;">
-          <img src="../resources/images/HND.png" class="d-block w-100 h-100" style="object-fit: cover;" alt="Haneda Airport">
+          <img src="{{ asset('images/HND.png') }}" class="d-block w-100 h-100" style="object-fit: cover;" alt="Haneda Airport">
           <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.85));"></div>
           <div class="carousel-caption d-none d-md-block" style="bottom: 40px; z-index: 10;">
             <h3 class="display-6 fw-bold">HND • Tokyo 🇯🇵</h3>
@@ -41,7 +41,7 @@
         </div>
 
         <div class="carousel-item" style="position: relative; height: 450px;">
-          <img src="../resources/images/HTW.png" class="d-block w-100 h-100" style="object-fit: cover;" alt="Heathrow Airport">
+          <img src="{{ asset('images/HTW.png') }}" class="d-block w-100 h-100" style="object-fit: cover;" alt="Heathrow Airport">
           <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.85));"></div>
           <div class="carousel-caption d-none d-md-block" style="bottom: 40px; z-index: 10;">
             <h3 class="display-6 fw-bold">LHR • London 🇬🇧</h3>

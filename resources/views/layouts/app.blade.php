@@ -186,7 +186,7 @@ footer {
 <body class="{{ Request::is('/') || Request::is('public') ? 'body-home' : '' }}">
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top py-2 {{ Request::is('/') || Request::is('public') ? '' : 'bg-dark' }}">
     <a class="navbar-brand" href="{{ url('/') }}">
-        <img src="{{ asset('../resources/images/flight-manager-logo2.png') }}" alt="Flight Manager Logo">
+        <img src="{{ asset('images/flight-manager-logo2.png') }}" alt="Flight Manager Logo">
     </a>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
