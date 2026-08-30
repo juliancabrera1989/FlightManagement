@@ -63,10 +63,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Vistas principales y buscadores
     Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
-    // Route::get('paths', [PathController::class, 'index'])->name('paths.index');
-    Route::get('/paths', function () {
-    return view('paths.index');
-})->name('paths.index');
+    Route::get('paths', [PathController::class, 'index'])->name('paths.index');
     Route::post('paths', [PathController::class, 'show'])->name('paths.show');
 
     /*

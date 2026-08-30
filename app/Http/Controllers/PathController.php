@@ -3,92 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Services\PathService;
+use App\Models\Airport;
 use Illuminate\Http\Request;
 
 class PathController extends Controller
 {
-    protected $pathService;
-
-    public function __construct(PathService $pathService)
+    // Carga ultraligera solo para renderizar el formulario
+    public function index()
     {
-        $this->pathService = $pathService;
-    }
-
-    // public function index()
-    // {
-    //     return view('paths.index');
-    // }
-    // public function index()
-    // {
-    //     $airports = \App\Models\Airport::all(); // <-- Agrega esto
-
-    //     return view('paths.index', compact('airports')); // <-- Y pásalo a la vista
-    // }
-
-//     public function index()
-// {
-//     \Log::info('1. Entrando al index de paths');
-
-//     $airports = \App\Models\Airport::all();
-//     \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
-
-//     return view('paths.index', compact('airports'));
-// }
-
-public function index()
-{
-    try {
-        \Log::info('1. Entrando al index de paths');
-
-        // Seleccionamos solo las columnas necesarias para no saturar memoria
-        $airports = \App\Models\Airport::select('id', 'name', 'code', 'city', 'country')->get();
-        
-        \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
+        $airports = Airport::select('id', 'name', 'code', 'city', 'country')
+            ->orderBy('name', 'asc')
+            ->get();
 
         return view('paths.index', compact('airports'));
-
-    } catch (\Exception $e) {
-        \Log::error('❌ Error en PathController@index: ' . $e->getMessage());
-        return response()->view('errors.custom', ['error' => $e->getMessage()], 500);
     }
-}
 
-public function show(Request $request)
-{
-    $request->validate([
-        'departure_airport_id' => 'required|exists:airports,id',
-        'arrival_airport_id'   => 'required|exists:airports,id',
-        'search_type'          => 'required|in:optimal,all_alternative',
-        'criteria'             => 'nullable|array',
-        'start_date'           => 'nullable|date',
-        'end_date'             => 'nullable|date|after_or_equal:start_date',
-    ]);
+    // Inyectamos el servicio SOLO cuando se presiona "Find Path"
+    public function show(Request $request, PathService $pathService)
+    {
+        $request->validate([
+            'departure_airport_id' => 'required|exists:airports,id',
+            'arrival_airport_id'   => 'required|exists:airports,id',
+            'search_type'          => 'required|in:optimal,all_alternative',
+            'criteria'             => 'nullable|array',
+            'start_date'           => 'nullable|date',
+            'end_date'             => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-    $departureId = $request->input('departure_airport_id');
-    $arrivalId   = $request->input('arrival_airport_id');
-    $searchType  = $request->input('search_type');
-    
-    // PRUEBA DE FUEGO: Detener la ejecución aquí antes de que toque el servicio
-    dd("Llegó perfecto al controlador, los IDs son Origen: {$departureId} y Destino: {$arrivalId}");
-        $criteria = $request->input('criteria');
-        if (empty($criteria)) {
-            $criteria = ['distance', 'cost', 'time']; // Valor por defecto para evitar que colapse
-        }
+        $departureId = $request->input('departure_airport_id');
+        $arrivalId   = $request->input('arrival_airport_id');
+        $searchType  = $request->input('search_type');
+        $criteria    = $request->input('criteria') ?? ['distance', 'cost', 'time'];
         $startDate   = $request->input('start_date');
         $endDate     = $request->input('end_date');
 
-        // 🔹 CASO A: DFS (Explorar todas las alternativas)
         if ($searchType === 'all_alternative') {
-            $allPaths = $this->pathService->getAllAlternativePaths($departureId, $arrivalId, $startDate, $endDate);
-
-            // ✅ Retorna la vista exclusiva de DFS con su mapa interactivo
+            $allPaths = $pathService->getAllAlternativePaths($departureId, $arrivalId, $startDate, $endDate);
             return view('paths.all', compact('allPaths'));
         }
 
-        // 🔹 CASO B: Dijkstra (Rutas óptimas)
-        $paths = $this->pathService->getPaths($departureId, $arrivalId, $criteria, $startDate, $endDate);
-
-        // ✅ Retorna la vista exclusiva de Dijkstra
+        $paths = $pathService->getPaths($departureId, $arrivalId, $criteria, $startDate, $endDate);
         return view('paths.show', compact('paths'));
     }
 }
