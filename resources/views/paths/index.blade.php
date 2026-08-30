@@ -45,6 +45,7 @@
                             <input type="datetime-local" name="end_date" id="end_date" class="form-control form-control-sm">
                         </div>
                     </div>
+                    <!-- Corregido: se cerraron bien las comillas de la clase -->
                     <small class="text-muted fst-italic" style="font-size: 0.75rem;">
                         * No Bounds. Search limitlessly<br>
                         * Only upper bound: it starts on the current date/time.
@@ -107,14 +108,12 @@ function toggleCriteria(show) {
     }
 }
 
-// Sincronizar la interfaz tan pronto como la página se cargue o se recupere del historial
 document.addEventListener('DOMContentLoaded', syncUIOnLoad);
 window.addEventListener('pageshow', syncUIOnLoad);
 
 function syncUIOnLoad() {
     const modeOptimal = document.getElementById('mode_optimal');
     if (modeOptimal) {
-        // Aplica la lógica dependiendo de cuál radio está seleccionado actualmente en el navegador
         toggleCriteria(modeOptimal.checked);
     }
 }

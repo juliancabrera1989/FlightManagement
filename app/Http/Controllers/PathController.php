@@ -14,9 +14,15 @@ class PathController extends Controller
         $this->pathService = $pathService;
     }
 
+    // public function index()
+    // {
+    //     return view('paths.index');
+    // }
     public function index()
     {
-        return view('paths.index');
+        $airports = \App\Models\Airport::all(); // <-- Agrega esto
+
+        return view('paths.index', compact('airports')); // <-- Y pásalo a la vista
     }
 
     public function show(Request $request)
