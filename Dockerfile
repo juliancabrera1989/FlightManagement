@@ -20,7 +20,7 @@ RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
 # Limpiar cache de apt
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP (incluyendo PostgreSQL)
+# Instalar extensiones de PHP (incluyend o PostgreSQL)
 RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
 # Obtener Composer
