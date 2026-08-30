@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
 # Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nginx \
     libpq-dev
 
 # Instalar Node.js y npm (necesario para React / Vite)
@@ -26,10 +25,17 @@ RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 # Obtener Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurar directorio de trabajo
-WORKDIR /var/www
+# Configurar directorio de trabajo en la carpeta public que exige Apache para Laravel
+WORKDIR /var/www/html
 
-COPY . /var/www
+# Copiar los archivos del proyecto
+COPY . /var/www/html
+
+# Apuntar el DocumentRoot de Apache directamente a la carpeta public de Laravel
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+
+# Habilitar mod_rewrite de Apache para las rutas de Laravel
+RUN a2enmod rewrite
 
 # Instalar dependencias de Laravel y compilar React
 RUN composer install --no-dev --optimize-autoloader
@@ -37,15 +43,9 @@ RUN npm install
 RUN npm run build
 
 # Configurar permisos
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-
-# Sobrescribir directamente el archivo de configuración por defecto de Nginx
-COPY nginx.conf /etc/nginx/sites-enabled/default
-
-# Copiar y dar permisos al script de arranque
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
 
-CMD ["/usr/local/bin/start.sh"]
+# Comando de inicio seguro que limpia caché, enlaza storage, migra y arranca Apache en primer plano
+CMD php artisan storage:link && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && apache2-foreground
