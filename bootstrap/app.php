@@ -10,13 +10,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Illuminate\Foundation\Configuration\Middleware  $middleware) {
+    ->withMiddleware(function (Illuminate\Foundation\Configuration\Middleware $middleware) {
+        // SOLUCIÓN: Confiar en todos los proxys de Render para las cabeceras HTTPS y CSRF
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
          'employee' => \App\Http\Middleware\EnsureEmployee::class,
          'passenger' => \App\Http\Middleware\EnsurePassenger::class,
         ]);
     })
-
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
