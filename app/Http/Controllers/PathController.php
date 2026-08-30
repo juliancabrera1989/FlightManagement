@@ -35,20 +35,23 @@ class PathController extends Controller
     return view('paths.index', compact('airports'));
 }
 
-    public function show(Request $request)
-    {
-        $request->validate([
-            'departure_airport_id' => 'required|exists:airports,id',
-            'arrival_airport_id'   => 'required|exists:airports,id',
-            'search_type'          => 'required|in:optimal,all_alternative',
-            'criteria'             => 'nullable|array',
-            'start_date'           => 'nullable|date',
-            'end_date'             => 'nullable|date|after_or_equal:start_date',
-        ]);
+public function show(Request $request)
+{
+    $request->validate([
+        'departure_airport_id' => 'required|exists:airports,id',
+        'arrival_airport_id'   => 'required|exists:airports,id',
+        'search_type'          => 'required|in:optimal,all_alternative',
+        'criteria'             => 'nullable|array',
+        'start_date'           => 'nullable|date',
+        'end_date'             => 'nullable|date|after_or_equal:start_date',
+    ]);
 
-        $departureId = $request->input('departure_airport_id');
-        $arrivalId   = $request->input('arrival_airport_id');
-        $searchType  = $request->input('search_type');
+    $departureId = $request->input('departure_airport_id');
+    $arrivalId   = $request->input('arrival_airport_id');
+    $searchType  = $request->input('search_type');
+    
+    // PRUEBA DE FUEGO: Detener la ejecución aquí antes de que toque el servicio
+    dd("Llegó perfecto al controlador, los IDs son Origen: {$departureId} y Destino: {$arrivalId}");
         $criteria = $request->input('criteria');
         if (empty($criteria)) {
             $criteria = ['distance', 'cost', 'time']; // Valor por defecto para evitar que colapse
