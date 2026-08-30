@@ -1,6 +1,6 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# Instalar dependencias
+# Instalar dependencias del sistema y extensiones necesarias para Laravel
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -10,40 +10,38 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nginx \
-    libpq-dev
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
-# Instalar Node.js
+# Instalar Node.js para compilar assets
 RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Extensiones PHP
-RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
-
-# Composer
+# Instalar Composer oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Cambiamos a la ruta estándar de Nginx /var/www/html
+# Configurar el DocumentRoot de Apache para que apunte a la carpeta public de Laravel
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+
+# Habilitar mod_rewrite de Apache para las URLs amigables de Laravel
+RUN a2enmod rewrite
+
+# Cambiar el puerto por defecto de Apache a 10000 (exigido por Render)
+RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
+
+# Copiar el código del proyecto
 WORKDIR /var/www/html
 COPY . /var/www/html
 
-# Instalar dependencias y compilar
+# Instalar dependencias de PHP y Node, y compilar
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Permisos
+# Dar permisos correctos a storage y bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Reemplazar la configuración principal de Nginx por completo
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Script de arranque
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
-
-EXPOSE 80
-
-CMD ["/usr/local/bin/start.sh"]
+EXPOSE 10000
