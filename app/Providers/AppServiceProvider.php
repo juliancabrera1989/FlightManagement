@@ -16,6 +16,9 @@ class AppServiceProvider extends ServiceProvider
     {
         if (config('app.env') === 'production' || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
-        }
+            if (config('app.url')) {
+                URL::forceRootUrl(config('app.url'));
+            }
+        } 
     }
 }

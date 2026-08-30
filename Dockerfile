@@ -52,4 +52,10 @@ RUN npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Dar permisos de ejecución al script de arranque
+RUN chmod +x /var/www/html/start.sh
+
 EXPOSE 10000
+
+# Arrancar la app ejecutando limpiezas, migraciones y levantando Apache
+CMD ["/var/www/html/start.sh"]
