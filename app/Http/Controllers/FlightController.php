@@ -393,39 +393,77 @@ public function index(Request $request)
 // }
 
 
-    public function update(Request $request, Flight $flight)
-    {
-        $user = auth()->user();
+    // public function update(Request $request, Flight $flight)
+    // {
+    //     $user = auth()->user();
 
-        // Validación de permisos según rol...
-        if ($user->role === 'airport_employee' && $flight->departure_airport_id !== $user->airport_id && $flight->arrival_airport_id !== $user->airport_id) {
-            abort(403);
-        } elseif ($user->role === 'airline_employee' && $flight->airline_id !== $user->airline_id) {
-            abort(403);
+    //     // Validación de permisos según rol...
+    //     if ($user->role === 'airport_employee' && $flight->departure_airport_id !== $user->airport_id && $flight->arrival_airport_id !== $user->airport_id) {
+    //         abort(403);
+    //     } elseif ($user->role === 'airline_employee' && $flight->airline_id !== $user->airline_id) {
+    //         abort(403);
+    //     }
+
+    //     $request->validate([
+    //         'airline_id'           => 'required|exists:airlines,id',
+    //         'departure_airport_id' => 'required|exists:airports,id',
+    //         'arrival_airport_id'   => 'required|exists:airports,id',
+    //         'flight_number'        => 'required|unique:flights,flight_number,' . $flight->id,
+    //         'departure_time'       => 'required|date',
+    //         'arrival_time'         => 'required|date|after:departure_time',
+    //         'ticket_cost'          => 'required|numeric',
+    //         'status'               => 'required|string',
+    //     ]);
+
+    //     $data = $request->all();
+
+    //     // Recalculamos la duración
+    //     $start = Carbon::parse($request->departure_time);
+    //     $end   = Carbon::parse($request->arrival_time);
+    //     $data['duration'] = $start->diffInMinutes($end);
+
+    //     $flight->update($data);
+
+    //     return redirect()->route('flights.index')->with('mensaje', 'Flight updated successfully.');
+    // }
+public function update(Request $request, Flight $flight)
+{
+    $user = auth()->user();
+
+    // Normalizar la comprobación usando employee_type en lugar de cambiar role
+    if ($user->isEmployee() && $user->employee_type === 'airport') {
+        if ($flight->departure_airport_id !== $user->airport_id && $flight->arrival_airport_id !== $user->airport_id) {
+            abort(403, 'No tienes permiso para modificar vuelos fuera de tu aeropuerto.');
         }
-
-        $request->validate([
-            'airline_id'           => 'required|exists:airlines,id',
-            'departure_airport_id' => 'required|exists:airports,id',
-            'arrival_airport_id'   => 'required|exists:airports,id',
-            'flight_number'        => 'required|unique:flights,flight_number,' . $flight->id,
-            'departure_time'       => 'required|date',
-            'arrival_time'         => 'required|date|after:departure_time',
-            'ticket_cost'          => 'required|numeric',
-            'status'               => 'required|string',
-        ]);
-
-        $data = $request->all();
-
-        // Recalculamos la duración
-        $start = Carbon::parse($request->departure_time);
-        $end   = Carbon::parse($request->arrival_time);
-        $data['duration'] = $start->diffInMinutes($end);
-
-        $flight->update($data);
-
-        return redirect()->route('flights.index')->with('mensaje', 'Flight updated successfully.');
+    } elseif ($user->isEmployee() && $user->employee_type === 'airline') {
+        if ($flight->airline_id !== $user->airline_id) {
+            abort(403, 'No tienes permiso para modificar vuelos de otra aerolínea.');
+        }
     }
+
+    $request->validate([
+        'airline_id'           => 'required|exists:airlines,id',
+        'departure_airport_id' => 'required|exists:airports,id',
+        'arrival_airport_id'   => 'required|exists:airports,id|different:departure_airport_id',
+        'flight_number'        => 'required|unique:flights,flight_number,' . $flight->id,
+        'departure_time'       => 'required|date',
+        'arrival_time'         => 'required|date|after:departure_time',
+        'ticket_cost'          => 'required|numeric|min:0',
+        'status'               => 'required|string',
+    ]);
+
+    $data = $request->all();
+
+    $start = Carbon::parse($request->departure_time);
+    $end   = Carbon::parse($request->arrival_time);
+    $data['duration'] = $start->diffInMinutes($end);
+
+    $flight->update($data);
+
+    return redirect()->route('flights.index')->with('mensaje', 'Flight updated successfully.');
+}
+
+
 
     public function destroy(Flight $flight)
     {

@@ -45,7 +45,7 @@
                             <input type="datetime-local" name="end_date" id="end_date" class="form-control form-control-sm">
                         </div>
                     </div>
-                    <small class="text-muted fst-italic style="font-size: 0.75rem;">
+                    <small class="text-muted fst-italic" style="font-size: 0.75rem;">
                         * No Bounds. Search limitlessly<br>
                         * Only upper bound: it starts on the current date/time.
                     </small>
