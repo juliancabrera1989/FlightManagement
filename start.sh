@@ -8,8 +8,10 @@ php artisan cache:clear
 php artisan storage:link
 php artisan migrate --force
 
-# Asegurar que Nginx escuche en el puerto 80 que pide Render
-sed -i 's/listen 8080;/listen 80;/g' /etc/nginx/sites-available/default 2>/dev/null || true
+# Forzar a Nginx a usar nuestra configuración eliminando el sitio por defecto
+rm -f /etc/nginx/sites-enabled/default
+rm -f /etc/nginx/conf.d/default.conf
+ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default 2>/dev/null || true
 
 # Iniciar Nginx en segundo plano y PHP-FPM en primer plano
 nginx &
