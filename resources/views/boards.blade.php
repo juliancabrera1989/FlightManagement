@@ -33,5 +33,5 @@
     window.APP_URL = "{{ url('/') }}"; 
 </script>
     @viteReactRefresh
-    @vite(['resources/js/boards/main.jsx'])
+    @vite(['resources/js/boards/App.jsx'])
 @endsection
