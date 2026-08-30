@@ -18,12 +18,22 @@ class PathController extends Controller
     // {
     //     return view('paths.index');
     // }
-    public function index()
-    {
-        $airports = \App\Models\Airport::all(); // <-- Agrega esto
+    // public function index()
+    // {
+    //     $airports = \App\Models\Airport::all(); // <-- Agrega esto
 
-        return view('paths.index', compact('airports')); // <-- Y pásalo a la vista
-    }
+    //     return view('paths.index', compact('airports')); // <-- Y pásalo a la vista
+    // }
+
+    public function index()
+{
+    \Log::info('1. Entrando al index de paths');
+
+    $airports = \App\Models\Airport::all();
+    \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
+
+    return view('paths.index', compact('airports'));
+}
 
     public function show(Request $request)
     {
