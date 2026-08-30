@@ -28,6 +28,9 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 # Habilitar mod_rewrite de Apache para las URLs amigables de Laravel
 RUN a2enmod rewrite
 
+# Permitir override en el directorio public para que lea el .htaccess de Laravel
+RUN echo '<Directory /var/www/html/public>\n\tOptions Indexes FollowSymLinks\n\tAllowOverride All\n\tRequire all granted\n</Directory>' >> /etc/apache2/apache2.conf
+
 # Cambiar el puerto por defecto de Apache a 10000 (exigido por Render)
 RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 
