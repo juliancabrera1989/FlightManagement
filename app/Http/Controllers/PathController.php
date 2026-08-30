@@ -49,7 +49,10 @@ class PathController extends Controller
         $departureId = $request->input('departure_airport_id');
         $arrivalId   = $request->input('arrival_airport_id');
         $searchType  = $request->input('search_type');
-        $criteria    = $request->input('criteria', ['distance', 'cost', 'time']);
+        $criteria = $request->input('criteria');
+        if (empty($criteria)) {
+            $criteria = ['distance', 'cost', 'time']; // Valor por defecto para evitar que colapse
+        }
         $startDate   = $request->input('start_date');
         $endDate     = $request->input('end_date');
 
