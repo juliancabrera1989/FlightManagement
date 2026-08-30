@@ -20,7 +20,7 @@ RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
 # Limpiar cache de apt
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP (incluyend o PostgreSQL)
+# Instalar extensiones de PHP (incluyendo PostgreSQL)
 RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
 # Obtener Composer
@@ -39,6 +39,10 @@ RUN npm run build
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+# Copiar y dar permisos al script de arranque
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 EXPOSE 80
 
-CMD php artisan storage:link && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80
+CMD ["/usr/local/bin/start.sh"]
