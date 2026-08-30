@@ -67,15 +67,16 @@
     @endif
 </div>
 
-{{-- Dependencias y Scripts vía Vite --}}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&libraries=geometry"></script>
+{{-- 1. Inyección de variables PHP a JavaScript --}}
+<script type="text/javascript">
+    window.allDfsPaths = @json($allPaths ?? []);
+</script>
 
+{{-- 2. Carga del SDK de Google Maps usando config() para evitar fallos en producción --}}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=geometry"></script>
+
+{{-- 3. Carga del script del simulador tras preparar los datos y la API --}}
 @vite([
     'resources/js/simulador/dfs-explorer.js'
 ])
-
-<script type="text/javascript">
-    // Inyección de la colección de rutas encontradas por el algoritmo de Laravel
-    window.allDfsPaths = @json($allPaths);
-</script>
 @endsection

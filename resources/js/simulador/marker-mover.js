@@ -6,18 +6,15 @@ import { updateClockDuringFlight, updateProgressUI } from './ui-updater';
  */
 export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, acumuladoPrevio, polylineRastro, callback) {
     const msPorCuadro = 30; 
-    let fraction = 0;
 
     const claveTramo = `${infoVuelo.departure_airport_id}-${infoVuelo.arrival_airport_id}`;
     const claveUnicaInstancia = `${claveTramo}-${infoVuelo.departure_time}`;
     const claveCompartidaHorario = `${claveTramo}-${infoVuelo.departure_time}`;
 
-    // Obtener qué criterios comparten EXACTAMENTE este vuelo en este horario
     const criteriosCompartidos = (window.tramosGlobalesCompartidos && window.tramosGlobalesCompartidos[claveCompartidaHorario])
         ? window.tramosGlobalesCompartidos[claveCompartidaHorario]
         : [crit];
 
-    // LÓGICA PIRAMIDAL DE GROSORES (Preservada intacta)
     const totalConcurrencia = (window.concurrenciaTramosGlobal && window.concurrenciaTramosGlobal[claveTramo]) ? window.concurrenciaTramosGlobal[claveTramo] : 1;
     const ordenRutas = (window.ordenTramosGlobal && window.ordenTramosGlobal[claveTramo]) ? window.ordenTramosGlobal[claveTramo] : [crit];
     let posicionIndice = ordenRutas.indexOf(crit);
@@ -34,9 +31,7 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
 
     const zIndexPrioridad = 100 + (posicionIndice * 10);
 
-    // 🌟 INTEGRACIÓN MULTICOLOR: Intercalación de puntos por offset si comparten el mismo vuelo
     let iconConfig = [];
-
     if (criteriosCompartidos.length === 1) {
         const colorRuta = window.obtenerColorPorCriterio ? window.obtenerColorPorCriterio(crit) : '#198754';
         const patronPuntosDistancia = `${Math.max(3, grosorLinea * 0.8)}px`;
@@ -110,10 +105,10 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
         marker.setZIndex(3000 + zIndexPrioridad);
     }
 
-    const depTime = infoVuelo.departure_time ? new Date(infoVuelo.departure_time).getTime() : window.earliest_departure_time.getTime();
-    const arrTime = infoVuelo.arrival_time ? new Date(infoVuelo.arrival_time).getTime() : (depTime + (duration * 60 * 1000 / 5));
+    // --- TIMINGS EN TIEMPO REAL/UTC ---
+    const depTime = parseFechaUTC(infoVuelo.departure_time).getTime();
+    const arrTime = parseFechaUTC(infoVuelo.arrival_time).getTime();
     const totalVueloMs = arrTime - depTime;
-    const duracionBaseSimulada = duration * (window.multiplicadorVelocidad || 1);
 
     const costoTramo = parseFloat(infoVuelo.price || infoVuelo.ticket_cost || 0);
     const rawDist = parseFloat(infoVuelo.distance || 0);
@@ -127,11 +122,24 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
             return;
         }
 
+        // Sincronización con el tiempo global
+        const tActual = window.tiempoSimulacionActual ? window.tiempoSimulacionActual.getTime() : depTime;
+        let fraction = (tActual - depTime) / totalVueloMs;
+        fraction = Math.min(1.0, Math.max(0.0, fraction));
+
         if (fraction >= 1.0) {
             if (marker && marker.getMap() !== null) {
                 marker.setPosition(endPos);
             }
-            polylineRastro.getPath().push(endPos);
+            
+            if (polylineRastro && polylineRastro.getPath) {
+                const path = polylineRastro.getPath();
+                if (path.getLength() > 1) {
+                    path.setAt(1, endPos);
+                } else {
+                    path.push(endPos);
+                }
+            }
             
             if (window.avionesActivosEnSimulacion[claveUnicaInstancia]) {
                 const m = window.avionesActivosEnSimulacion[claveUnicaInstancia];
@@ -174,13 +182,17 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
                 }
             }
 
-            polylineRastro.getPath().push(currentPos);
+            if (polylineRastro && polylineRastro.getPath) {
+                const path = polylineRastro.getPath();
+                if (path.getLength() < 2) {
+                    path.push(currentPos);
+                } else {
+                    path.setAt(1, currentPos);
+                }
+            }
 
             updateClockDuringFlight(crit, depTime, totalVueloMs, fraction);
             updateProgressUI(crit, acumuladoPrevio, infoVuelo, fraction);
-
-            fraction += (msPorCuadro * (window.multiplicadorVelocidad || 1)) / (duracionBaseSimulada || 1);
-            if (fraction > 1.0) fraction = 1.0;
 
             const siguientePasoTimeout = setTimeout(runStep, msPorCuadro);
             if (window.todosLosTimeouts) window.todosLosTimeouts.push(siguientePasoTimeout);
@@ -189,4 +201,10 @@ export function animateMarker(map, startPos, endPos, duration, crit, infoVuelo, 
 
     const primerPasoTimeout = setTimeout(runStep, msPorCuadro);
     if (window.todosLosTimeouts) window.todosLosTimeouts.push(primerPasoTimeout);
+}
+
+function parseFechaUTC(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    return new Date(dateStr.replace(' ', 'T') + (dateStr.includes('Z') ? '' : 'Z'));
 }
