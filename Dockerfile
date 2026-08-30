@@ -20,19 +20,19 @@ RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
 # Instalar Composer oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurar el DocumentRoot de Apache para que apunte a la carpeta public de Laravel
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+# Configurar Apache para que apunte directamente a /public y gestione FallbackResource
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+RUN sed -i 's|/var/www/|/var/www/html/public|g' /etc/apache2/apache2.conf
 
-# Habilitar mod_rewrite de Apache para las URLs amigables de Laravel
+# Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Configurar permisos globales y habilitar AllowOverride para el directorio raíz de Apache
-RUN echo '<Directory /var/www/html/public/>\n\
-    Options Indexes FollowSymLinks\n\
+# Configuración estricta de Apache para redirigir todo el tráfico a index.php sin fallar
+RUN echo '<Directory /var/www/html/public>\n\
+    Options -Indexes +FollowSymLinks\n\
     AllowOverride All\n\
     Require all granted\n\
+    FallbackResource /index.php\n\
 </Directory>' > /etc/apache2/conf-available/laravel.conf \
     && a2enconf laravel
 
