@@ -25,14 +25,32 @@ class PathController extends Controller
     //     return view('paths.index', compact('airports')); // <-- Y pásalo a la vista
     // }
 
-    public function index()
+//     public function index()
+// {
+//     \Log::info('1. Entrando al index de paths');
+
+//     $airports = \App\Models\Airport::all();
+//     \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
+
+//     return view('paths.index', compact('airports'));
+// }
+
+public function index()
 {
-    \Log::info('1. Entrando al index de paths');
+    try {
+        \Log::info('1. Entrando al index de paths');
 
-    $airports = \App\Models\Airport::all();
-    \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
+        // Seleccionamos solo las columnas necesarias para no saturar memoria
+        $airports = \App\Models\Airport::select('id', 'name', 'code', 'city', 'country')->get();
+        
+        \Log::info('2. Aeropuertos obtenidos con éxito. Cantidad: ' . $airports->count());
 
-    return view('paths.index', compact('airports'));
+        return view('paths.index', compact('airports'));
+
+    } catch (\Exception $e) {
+        \Log::error('❌ Error en PathController@index: ' . $e->getMessage());
+        return response()->view('errors.custom', ['error' => $e->getMessage()], 500);
+    }
 }
 
 public function show(Request $request)
