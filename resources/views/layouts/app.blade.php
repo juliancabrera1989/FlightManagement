@@ -170,13 +170,6 @@ footer {
 
 
     </style>
-    <!-- Agrega esto en el <head> de app.blade.php -->
-    @vite([
-        'resources/sass/app.scss', 
-        'resources/js/app.js', 
-        'resources/js/simulador/dfs-explorer.js',
-        'resources/js/boards/main.jsx'
-    ])
     @stack('styles')
 </head>
 <body class="{{ Request::is('/') || Request::is('public') ? 'body-home' : '' }}">

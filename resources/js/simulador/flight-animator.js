@@ -478,7 +478,7 @@ function animateMarkers(map, tramosCoords, crit, vuelosData) {
                 if (crit === 'distance') acumuladoActual = distanciaAcumulada;
                 if (crit === 'time') acumuladoActual = msTiempoVueloAcumulado / 60000;
 
-                animateMarker(map, originCoords, destCoords, (tLlegadaVuelo - tSalidaVuelo), crit, infoVuelo, acumuladoActual, polylineRastro, (nuevoAcumulado) => {
+                animateMarker(map, originCoords, destCoords, duracionAnimacionMs, crit, infoVuelo, acumuladoActual, polylineRastro, (nuevoAcumulado) => {
                     msTiempoVueloAcumulado += (tLlegadaVuelo - tSalidaVuelo);
                     distanciaAcumulada += distTramoKm;
                     costoAcumulado += costoTramoActual;
