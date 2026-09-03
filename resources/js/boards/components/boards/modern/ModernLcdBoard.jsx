@@ -10,7 +10,7 @@ export default function ModernLcdBoard({
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Generamos el set de vuelos que se van a mostrar en las N filas
+  // Generamos el set de vuelos de la página actual (10 en 10)
   const visibleFlights = flights.slice(currentIndex, currentIndex + visibleCount);
 
   useEffect(() => {
@@ -18,9 +18,11 @@ export default function ModernLcdBoard({
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        const nextIndex = prevIndex + 1;
-        // Si nos pasamos del total, volvemos al principio (bucle infinito de cartel)
-        return nextIndex + visibleCount > flights.length ? 0 : nextIndex;
+        // Saltamos en bloques del tamaño visible (ej. 10 en 10)
+        const nextIndex = prevIndex + visibleCount;
+        
+        // Si nos pasamos del total, volvemos al principio
+        return nextIndex >= flights.length ? 0 : nextIndex;
       });
     }, holdMs);
 
@@ -48,7 +50,7 @@ export default function ModernLcdBoard({
         <div className="lcd-col-label col-remark">REMARK</div>
       </div>
 
-      {/* GRILA DE FILAS INTERCALADAS */}
+      {/* GRILLA DE FILAS INTERCALADAS */}
       <div className="lcd-rows-grid">
         {Array.from({ length: visibleCount }).map((_, i) => {
           const flight = visibleFlights[i] || null;
@@ -56,7 +58,7 @@ export default function ModernLcdBoard({
             <LcdRow 
               key={i} 
               flight={flight} 
-              direction={direction} /* <--- AGREGAMOS ESTO */
+              direction={direction} 
               isEven={i % 2 === 0} 
             />
           );
