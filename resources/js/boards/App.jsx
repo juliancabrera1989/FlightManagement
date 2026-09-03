@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Filters from "./components/Filters";
 import Board from "./components/Board";
-import { getFlights, getAirlines } from "./api"; // 🎯 Sumamos getAirlines
+import { getFlights, getAirlines } from "./api";
 
 function App() {
   const boardOptions = ["modern", "matrix", "solari"];
@@ -27,24 +27,46 @@ function App() {
   });
 
   const [flights, setFlights] = useState([]);
-  const [allAirlines, setAllAirlines] = useState([]); // 🎯 Estado de raíz para el charset mecánico
+  const [allAirlines, setAllAirlines] = useState([]);
 
-  // 👉 FETCH DE AEROLÍNEAS COMPLETO (Se ejecuta una sola vez al iniciar la App)
+  // 👉 FETCH DE AEROLÍNEAS
   useEffect(() => {
     getAirlines().then(data => {
       setAllAirlines(Array.isArray(data) ? data : []);
     });
   }, []);
 
-  // 👉 FETCH DE VUELOS
+  // 👉 FETCH DE VUELOS CON ORDENAMIENTO Y FILTRADO REALISTA
   useEffect(() => {
     if (!filters.airport) {
       setFlights([]);
       return;
     }
-    console.log("Filtros en React:", filters);
+    
     getFlights(filters).then(data => {
-      setFlights(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data)) {
+        setFlights([]);
+        return;
+      }
+
+      // 1. Tomamos el timestamp de hace 30 minutos
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+      // 2. Filtramos vuelos pasados y ordenamos cronológicamente
+      const processedFlights = data
+        .filter(flight => {
+          const timeField = filters.direction === "departures" 
+            ? flight.departure_time 
+            : flight.arrival_time;
+          return new Date(timeField) >= thirtyMinsAgo;
+        })
+        .sort((a, b) => {
+          const timeA = new Date(filters.direction === "departures" ? a.departure_time : a.arrival_time);
+          const timeB = new Date(filters.direction === "departures" ? b.departure_time : b.arrival_time);
+          return timeA - timeB; // Los más próximos primero
+        });
+
+      setFlights(processedFlights);
     });
   }, [filters.airport, filters.direction]); 
 
@@ -66,7 +88,7 @@ function App() {
         key={`${filters.airport}-${filters.direction}-${boardType}`}
         type={boardType}
         flights={flights}
-        airlines={allAirlines} // 🎯 Pasamos la lista real de la base de datos
+        airlines={allAirlines}
         direction={filters.direction}
       />
     </div>
