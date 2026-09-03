@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Filters from "./components/Filters";
 import Board from "./components/Board";
-import { getFlights, getAirlines } from "./api";
+import { getFlights, getAirlines } from "./api"; // 🎯 Sumamos getAirlines
 
 function App() {
   const boardOptions = ["modern", "matrix", "solari"];
@@ -27,36 +27,47 @@ function App() {
   });
 
   const [flights, setFlights] = useState([]);
-  const [allAirlines, setAllAirlines] = useState([]);
+  const [allAirlines, setAllAirlines] = useState([]); // 🎯 Estado de raíz para el charset mecánico
 
-  // 👉 FETCH DE AEROLÍNEAS
+  // 👉 FETCH DE AEROLÍNEAS COMPLETO (Se ejecuta una sola vez al iniciar la App)
   useEffect(() => {
     getAirlines().then(data => {
       setAllAirlines(Array.isArray(data) ? data : []);
     });
   }, []);
 
-  // 👉 FETCH DE VUELOS CON ORDENAMIENTO ROBUSTO
+  // 👉 FETCH DE VUELOS CON REORDENAMIENTO TEMPORAL INTELIGENTE
   useEffect(() => {
     if (!filters.airport) {
       setFlights([]);
       return;
     }
-    
+    console.log("Filtros en React:", filters);
     getFlights(filters).then(data => {
       if (!Array.isArray(data) || data.length === 0) {
         setFlights([]);
         return;
       }
 
-      // Ordenamos cronológicamente sin descartar registros por zona horaria
-      const sortedFlights = [...data].sort((a, b) => {
+      const now = new Date();
+
+      // Ordenamos para priorizar el horario actual sin perder ningún vuelo
+      const sorted = [...data].sort((a, b) => {
         const timeA = new Date(filters.direction === "departures" ? a.departure_time : a.arrival_time);
         const timeB = new Date(filters.direction === "departures" ? b.departure_time : b.arrival_time);
-        return timeA - timeB;
+
+        // Diferencia en minutos con la hora actual
+        let diffA = (timeA - now) / 60000;
+        let diffB = (timeB - now) / 60000;
+
+        // Vuelos ocurridos hace más de 30 mins se empujan al final del carrusel
+        if (diffA < -30) diffA += 1440;
+        if (diffB < -30) diffB += 1440;
+
+        return diffA - diffB;
       });
 
-      setFlights(sortedFlights);
+      setFlights(sorted);
     });
   }, [filters.airport, filters.direction]); 
 
@@ -78,7 +89,7 @@ function App() {
         key={`${filters.airport}-${filters.direction}-${boardType}`}
         type={boardType}
         flights={flights}
-        airlines={allAirlines}
+        airlines={allAirlines} // 🎯 Pasamos la lista real de la base de datos
         direction={filters.direction}
       />
     </div>
