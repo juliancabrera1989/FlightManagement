@@ -36,7 +36,7 @@ function App() {
     });
   }, []);
 
-  // 👉 FETCH DE VUELOS CON ORDENAMIENTO Y FILTRADO REALISTA
+  // 👉 FETCH DE VUELOS CON ORDENAMIENTO ROBUSTO
   useEffect(() => {
     if (!filters.airport) {
       setFlights([]);
@@ -44,29 +44,19 @@ function App() {
     }
     
     getFlights(filters).then(data => {
-      if (!Array.isArray(data)) {
+      if (!Array.isArray(data) || data.length === 0) {
         setFlights([]);
         return;
       }
 
-      // 1. Tomamos el timestamp de hace 30 minutos
-      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+      // Ordenamos cronológicamente sin descartar registros por zona horaria
+      const sortedFlights = [...data].sort((a, b) => {
+        const timeA = new Date(filters.direction === "departures" ? a.departure_time : a.arrival_time);
+        const timeB = new Date(filters.direction === "departures" ? b.departure_time : b.arrival_time);
+        return timeA - timeB;
+      });
 
-      // 2. Filtramos vuelos pasados y ordenamos cronológicamente
-      const processedFlights = data
-        .filter(flight => {
-          const timeField = filters.direction === "departures" 
-            ? flight.departure_time 
-            : flight.arrival_time;
-          return new Date(timeField) >= thirtyMinsAgo;
-        })
-        .sort((a, b) => {
-          const timeA = new Date(filters.direction === "departures" ? a.departure_time : a.arrival_time);
-          const timeB = new Date(filters.direction === "departures" ? b.departure_time : b.arrival_time);
-          return timeA - timeB; // Los más próximos primero
-        });
-
-      setFlights(processedFlights);
+      setFlights(sortedFlights);
     });
   }, [filters.airport, filters.direction]); 
 
