@@ -17,84 +17,6 @@ class FlightController extends Controller
 {
   
 
-// public function index(Request $request)
-// {
-//     $airports = Airport::orderBy('code')->get();
-//     $airlines = Airline::orderBy('name')->get();
-
-//     // Si no hay parámetros en la URL, mandamos las colecciones vacías para congelar la pantalla inicial
-//     if (empty($request->all())) {
-//         return view('flights.index', [
-//             'flights' => collect(),
-//             'airports' => $airports,
-//             'airlines' => $airlines
-//         ]);
-//     }
-
-//     $query = Flight::with(['airline', 'departureAirport', 'arrivalAirport']);
-
-//     // 🔒 REGLAS DE RESTRICCIÓN Y FILTRADO POR ROL
-//     if (auth()->check() && auth()->user()->role === 'employee') {
-        
-//         if (auth()->user()->employee_type === 'airline') {
-//             // ✈️ STAFF DE AEROLÍNEA: Forzado a ver solo su empresa
-//             $query->where('airline_id', auth()->user()->airline_id);
-
-//             // Filtros de su formulario específico
-//             if ($request->filled('origin')) {
-//                 $query->where('departure_airport_id', $request->origin);
-//             }
-//             if ($request->filled('destination')) {
-//                 $query->where('arrival_airport_id', $request->destination);
-//             }
-//         } 
-//         elseif (auth()->user()->employee_type === 'airport') {
-//             // 🏢 STAFF DE AEROPUERTO: Forzado a ver lo que toque su base
-//             $myAirportId = auth()->user()->airport_id;
-
-//             if ($request->input('airport_op') === 'arrivals') {
-//                 // Si busca arribos, el destino del vuelo es SU aeropuerto
-//                 $query->where('arrival_airport_id', $myAirportId);
-                
-//                 // Y el filtro "connected_airport" actúa como el origen del vuelo
-//                 if ($request->filled('connected_airport')) {
-//                     $query->where('departure_airport_id', $request->connected_airport);
-//                 }
-//             } else {
-//                 // Por defecto: Departures (Salidas). El origen del vuelo es SU aeropuerto
-//                 $query->where('departure_airport_id', $myAirportId);
-
-//                 // Y el filtro "connected_airport" actúa como el destino final del vuelo
-//                 if ($request->filled('connected_airport')) {
-//                     $query->where('arrival_airport_id', $request->connected_airport);
-//                 }
-//             }
-//         }
-        
-//     } else {
-//         // 👤 PASAJERO COMÚN: Solo ve programados + filtros comerciales clásicos
-//         $query->where('status', 'Scheduled');
-
-//         if ($request->filled('origin')) {
-//             $query->where('departure_airport_id', $request->origin);
-//         }
-//         if ($request->filled('destination')) {
-//             $query->where('arrival_airport_id', $request->destination);
-//         }
-//         if ($request->filled('airline')) {
-//             $query->where('airline_id', $request->airline);
-//         }
-//     }
-
-//     // Filtro global de fecha (Aplica a todos los roles)
-//     if ($request->filled('date')) {
-//         $query->whereDate('departure_time', $request->date);
-//     }
-
-//     $flights = $query->orderBy('departure_time', 'asc')->get();
-
-//     return view('flights.index', compact('flights', 'airports', 'airlines'));
-// }
 
 public function index(Request $request)
 {
@@ -157,7 +79,7 @@ public function index(Request $request)
         
     } else {
         // 👤 PASAJERO COMÚN: Solo ve programados
-        $query->where('status', 'Scheduled');
+       $query->where('status', 'SCHEDULED');
 
         if ($request->filled('origin')) {
             $query->where('departure_airport_id', $request->origin);
@@ -179,13 +101,8 @@ public function index(Request $request)
     return view('flights.index', compact('flights', 'airports', 'airlines'));
 }
 
-    //   public function create()
-    // {
-    //     $this->authorizeRole('employee');
-    //     $airlines = Airline::all();
-    //     $airports = Airport::all();
-    //     return view('flights.create', compact('airlines', 'airports'));
-    // }
+
+
     public function create()
     {
         $user = auth()->user();
@@ -205,61 +122,6 @@ public function index(Request $request)
 
 
 
-
-
-
-    // public function store(Request $request)
-    // {
-
-    //      $this->authorizeRole('employee');
-
-         
-    //     $request->validate([
-    //         'airline_id' => 'required|exists:airlines,id',
-    //         'departure_airport_id' => 'required|exists:airports,id',
-    //         'arrival_airport_id' => 'required|exists:airports,id',
-    //         'flight_number' => 'required|unique:flights',
-    //         'departure_time' => 'required|date',
-    //         'arrival_time' => 'required|date',
-    //         'ticket_cost' => 'required',
-    //         'duration' => 'required'
-    //     ]);
-        
-    //     Flight::create($request->all());
-    //     return redirect('flights')->with('mensaje', 'Flight created successfully.');
-    // }
-
-    // public function store(Request $request)
-    // {
-    //     $user = auth()->user();
-
-    //     // 1. Si es empleado de aerolínea, forzamos que use su propia airline_id
-    //     if ($user->role === 'airline_employee') {
-    //         $request->merge(['airline_id' => $user->airline_id]);
-    //     }
-
-    //     // 2. Validaciones normales
-    //     $request->validate([
-    //         'airline_id'           => 'required|exists:airlines,id',
-    //         'departure_airport_id' => 'required|exists:airports,id',
-    //         'arrival_airport_id'   => 'required|exists:airports,id',
-    //         'flight_number'        => 'required|unique:flights,flight_number',
-    //         'departure_time'       => 'required|date',
-    //         'arrival_time'         => 'required|date|after:departure_time',
-    //         'ticket_cost'          => 'required|numeric',
-    //         'status'               => 'required|string',
-    //     ]);
-
-    //     // 3. Extracción de datos y cálculo de duración
-    //     $data = $request->all();
-    //     $start = \Carbon\Carbon::parse($request->departure_time);
-    //     $end   = \Carbon\Carbon::parse($request->arrival_time);
-    //     $data['duration'] = $start->diffInMinutes($end);
-
-    //     Flight::create($data);
-
-    //     return redirect()->route('flights.index')->with('mensaje', 'Flight created successfully.');
-    // }
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -309,14 +171,7 @@ public function index(Request $request)
         return view('flights.show', compact('flight'));
     }
 
-    // public function edit(Flight $flight)
-    // {
 
-    //     $this->authorizeRole('employee');
-    //     $airlines = Airline::all();
-    //     $airports = Airport::all();
-    //     return view('flights.edit', compact('flight', 'airlines', 'airports'));
-    // }
 
     public function edit(Flight $flight)
     {
@@ -337,95 +192,6 @@ public function index(Request $request)
 
 
 
-
-    // public function update(Request $request, Flight $flight)
-    // {
-
-    //     $this->authorizeRole('employee');
-    //     $request->validate([
-    //         'airline_id' => 'required|exists:airlines,id',
-    //         'departure_airport_id' => 'required|exists:airports,id',
-    //         'arrival_airport_id' => 'required|exists:airports,id',
-    //         'flight_number' => 'required|unique:flights,flight_number,' . $flight->id,
-    //         'departure_time' => 'required|date',
-    //         'arrival_time' => 'required|date',
-    //         'ticket_cost' => 'required',
-    //         'duration' => 'required'
-    //     ]);
-
-    //     $flight->update($request->all());
-    //     return redirect('flights')->with('mensaje', 'Flight updated successfully.');
-    // }
-
-
-
-//     public function update(Request $request, Flight $flight)
-// {
-//     $user = auth()->user();
-
-//     if ($user->role === 'airport_employee') {
-//         if ($flight->departure_airport_id !== $user->airport_id && $flight->arrival_airport_id !== $user->airport_id) {
-//             abort(403, 'No tienes permiso para modificar vuelos fuera de tu aeropuerto.');
-//         }
-//     } elseif ($user->role === 'airline_employee') {
-//         if ($flight->airline_id !== $user->airline_id) {
-//             abort(403, 'No tienes permiso para modificar vuelos de otra aerolínea.');
-//         }
-//     }
-
-//     // Lógica para guardar la actualización...
-//     // 2. Validación de datos recibidos
-//     $request->validate([
-//         'airline_id'           => 'required|exists:airlines,id',
-//         'departure_airport_id' => 'required|exists:airports,id',
-//         'arrival_airport_id'   => 'required|exists:airports,id',
-//         'flight_number'        => 'required|unique:flights,flight_number,' . $flight->id,
-//         'departure_time'       => 'required|date',
-//         'arrival_time'         => 'required|date',
-//         'ticket_cost'          => 'required|numeric',
-//         'duration'             => 'nullable'
-//     ]);
-
-//     // 3. Actualización y redirección
-//     $flight->update($request->all());
-
-//     return redirect()->route('flights.index')->with('mensaje', 'Flight updated successfully.');
-// }
-
-
-    // public function update(Request $request, Flight $flight)
-    // {
-    //     $user = auth()->user();
-
-    //     // Validación de permisos según rol...
-    //     if ($user->role === 'airport_employee' && $flight->departure_airport_id !== $user->airport_id && $flight->arrival_airport_id !== $user->airport_id) {
-    //         abort(403);
-    //     } elseif ($user->role === 'airline_employee' && $flight->airline_id !== $user->airline_id) {
-    //         abort(403);
-    //     }
-
-    //     $request->validate([
-    //         'airline_id'           => 'required|exists:airlines,id',
-    //         'departure_airport_id' => 'required|exists:airports,id',
-    //         'arrival_airport_id'   => 'required|exists:airports,id',
-    //         'flight_number'        => 'required|unique:flights,flight_number,' . $flight->id,
-    //         'departure_time'       => 'required|date',
-    //         'arrival_time'         => 'required|date|after:departure_time',
-    //         'ticket_cost'          => 'required|numeric',
-    //         'status'               => 'required|string',
-    //     ]);
-
-    //     $data = $request->all();
-
-    //     // Recalculamos la duración
-    //     $start = Carbon::parse($request->departure_time);
-    //     $end   = Carbon::parse($request->arrival_time);
-    //     $data['duration'] = $start->diffInMinutes($end);
-
-    //     $flight->update($data);
-
-    //     return redirect()->route('flights.index')->with('mensaje', 'Flight updated successfully.');
-    // }
 public function update(Request $request, Flight $flight)
 {
     $user = auth()->user();
