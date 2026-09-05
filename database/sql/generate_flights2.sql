@@ -13,8 +13,6 @@
 --     DECLARE dep_time DATETIME;
 --     DECLARE arr_time DATETIME;
 --     DECLARE ticket DECIMAL(10,2);
---     DECLARE flight_status VARCHAR(20);
---     DECLARE rand_status INT;
 
 --     WHILE i <= total DO
 
@@ -32,7 +30,7 @@
 --         ORDER BY RAND()
 --         LIMIT 1;
 
---         -- Select random arrival airport
+--         -- Select random arrival airport different from departure
 --         SELECT id
 --         INTO arr_id
 --         FROM airports
@@ -40,42 +38,14 @@
 --         ORDER BY RAND()
 --         LIMIT 1;
 
---         -- Dispersión de horarios
---         SET dep_time = NOW() 
---             + INTERVAL (FLOOR(RAND() * 50) - 2) HOUR 
---             + INTERVAL FLOOR(RAND() * 60) MINUTE;
+--         -- Random departure time
+--         SET dep_time = NOW() + INTERVAL FLOOR(RAND() * 300) HOUR;
 
---         -- Duración del vuelo (1 a 12 horas)
---         SET arr_time = dep_time 
---             + INTERVAL FLOOR(RAND() * 12 + 1) HOUR
---             + INTERVAL FLOOR(RAND() * 60) MINUTE;
+--         -- Random flight duration between 1 and 12 hours
+--         SET arr_time = dep_time + INTERVAL FLOOR(RAND() * 12 + 1) HOUR;
 
---         -- Precio
+--         -- Random ticket price between 100 and 899
 --         SET ticket = FLOOR(RAND() * 800 + 100);
-
---         -- Lógica de asignación de STATUS
---         IF dep_time > NOW() + INTERVAL 2 HOUR THEN
---             SET rand_status = FLOOR(RAND() * 100);
---             IF rand_status < 5 THEN
---                 SET flight_status = 'CANCELLED';
---             ELSE
---                 SET flight_status = 'SCHEDULED';
---             END IF;
-
---         ELSEIF dep_time BETWEEN NOW() AND NOW() + INTERVAL 2 HOUR THEN
---             SET rand_status = FLOOR(RAND() * 100);
---             IF rand_status < 20 THEN
---                 SET flight_status = 'DELAYED';
---             ELSE
---                 SET flight_status = 'BOARDING';
---             END IF;
-
---         ELSEIF NOW() BETWEEN dep_time AND arr_time THEN
---             SET flight_status = 'IN_AIR';
-
---         ELSE
---             SET flight_status = 'LANDED';
---         END IF;
 
 --         INSERT INTO flights (
 --             airline_id,
@@ -84,18 +54,22 @@
 --             flight_number,
 --             departure_time,
 --             arrival_time,
---             ticket_cost,
---             status
+--             ticket_cost
 --         )
 --         VALUES (
 --             airline_id,
 --             dep_id,
 --             arr_id,
---             CONCAT(airline_code, LPAD(i, 4, '0')),
+
+--             -- GUARANTEED UNIQUE FLIGHT NUMBER
+--             CONCAT(
+--                 airline_code,
+--                 LPAD(i, 4, '0')
+--             ),
+
 --             dep_time,
 --             arr_time,
---             ticket,
---             flight_status
+--             ticket
 --         );
 
 --         SET i = i + 1;
@@ -106,8 +80,6 @@
 
 -- DELIMITER ;
 
-
--- DROP PROCEDURE public.generate_flights(int4);
 
 CREATE OR REPLACE PROCEDURE generate_flights(total INT)
 LANGUAGE plpgsql
@@ -132,41 +104,41 @@ BEGIN
         SELECT id INTO v_arr_id FROM airports WHERE id <> v_dep_id ORDER BY random() LIMIT 1;
 
         v_ticket := floor(random() * 800 + 100)::numeric;
-        v_bucket := floor(random() * 100); -- Control de probabilidad
+        v_bucket := floor(random() * 100);
         v_rand := floor(random() * 100);
 
-        -- 1. Vuelos Futuros Programados (40% del total) -> SCHEDULED
+        -- 1. Vuelos Futuros Programados (40%) -> De +2 horas hasta +30 DÍAS
         IF v_bucket < 40 THEN
-            v_dep_time := NOW() + (floor(random() * 720 + 45) || ' minutes')::interval; -- +45m a +12h
+            v_dep_time := NOW() + (floor(random() * 720 + 2) || ' hours')::interval;
             v_flight_status := 'SCHEDULED';
 
-        -- 2. Vuelos Próximos a Despegar / En Puerta (20% del total) -> BOARDING o DELAYED
+        -- 2. Vuelos en Puerta / Próximos (20%) -> Entre -15 min y +45 min (En vivo)
         ELSIF v_bucket < 60 THEN
-            v_dep_time := NOW() + (floor(random() * 60 - 15) || ' minutes')::interval; -- -15m a +45m
+            v_dep_time := NOW() + (floor(random() * 60 - 15) || ' minutes')::interval;
             IF v_rand < 30 THEN
                 v_flight_status := 'DELAYED';
             ELSE
                 v_flight_status := 'BOARDING';
             END IF;
 
-        -- 3. Vuelos Recién Despegados (15% del total) -> IN_AIR
+        -- 3. Vuelos en el aire (15%) -> Despegaron hace entre 15 min y 6 horas
         ELSIF v_bucket < 75 THEN
-            v_dep_time := NOW() - (floor(random() * 215 + 15) || ' minutes')::interval; -- -15m a -4h
+            v_dep_time := NOW() - (floor(random() * 345 + 15) || ' minutes')::interval;
             v_flight_status := 'IN_AIR';
 
-        -- 4. Vuelos que ya llegaron (20% del total) -> LANDED
+        -- 4. Vuelos que ya llegaron (20%) -> Histórico desde -12 horas hasta -15 DÍAS
         ELSIF v_bucket < 95 THEN
-            v_dep_time := NOW() - (floor(random() * 480 + 240) || ' minutes')::interval; -- -4h a -12h
+            v_dep_time := NOW() - (floor(random() * 348 + 12) || ' hours')::interval;
             v_flight_status := 'LANDED';
 
-        -- 5. Cancelaciones esporádicas (5% del total) -> CANCELLED
+        -- 5. Cancelados (5%) -> Distribuidos entre los últimos 3 días y los próximos 3 días
         ELSE
-            v_dep_time := NOW() + (floor(random() * 360 - 60) || ' minutes')::interval;
+            v_dep_time := NOW() + (floor(random() * 144 - 72) || ' hours')::interval;
             v_flight_status := 'CANCELLED';
         END IF;
 
-        -- Hora de llegada en base al despegue
-        v_arr_time := v_dep_time + (floor(random() * 10 + 2) || ' hours')::interval;
+        -- Duración del vuelo (entre 1 y 8 horas)
+        v_arr_time := v_dep_time + (floor(random() * 7 + 1) || ' hours')::interval;
 
         INSERT INTO flights (
             airline_id, departure_airport_id, arrival_airport_id, 
@@ -182,3 +154,4 @@ BEGIN
     END LOOP;
 END;
 $$;
+

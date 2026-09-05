@@ -18,11 +18,9 @@ class GraphService
     {
         $this->graph = [];
 
-        // 🟢 CLAVE: Eager loading para evitar N+1 consultas SQL en Render
         $flights = Flight::with(['departureAirport', 'arrivalAirport'])->get();
 
         foreach ($flights as $flight) {
-            // Evitar crash si algún vuelo tiene relaciones nulas
             if (!$flight->departureAirport || !$flight->arrivalAirport) {
                 continue;
             }
@@ -44,7 +42,7 @@ class GraphService
 
     public function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
-        $earthRadius = 6371; // En KM
+        $earthRadius = 6371;
         $lat1 = deg2rad($lat1);
         $lon1 = deg2rad($lon1);
         $lat2 = deg2rad($lat2);
@@ -138,19 +136,19 @@ class GraphService
         ];
     }
 
-    public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 50)
+    public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
     {
         $allPaths = [];
         $visited = [];
         $startTimestamp = $startDate ? strtotime($startDate) : null;
         $endTimestamp = $endDate ? strtotime($endDate) : null;
 
-        $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $maxPaths);
+        $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats);
 
         return $allPaths;
     }
 
-    protected function dfs($currentAirport, $destination, &$visited, $currentPathFlights, &$allPaths, $lastArrivalTime, $depth, $startTimestamp, $endTimestamp, $maxPaths)
+    protected function dfs($currentAirport, $destination, &$visited, $currentPathFlights, &$allPaths, $lastArrivalTime, $depth, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats)
     {
         if (count($allPaths) >= $maxPaths || $depth > 3) return;
 
@@ -163,7 +161,10 @@ class GraphService
 
         if (isset($this->graph[$currentAirport])) {
             foreach ($this->graph[$currentAirport] as $nextAirport => $listOfFlights) {
-                if (isset($visited[$nextAirport]) && $visited[$nextAirport]) continue;
+                // Si no se permiten repetidos, omitir nodos ya visitados en esta rama
+                if (!$allowRepeats && isset($visited[$nextAirport]) && $visited[$nextAirport]) {
+                    continue;
+                }
 
                 foreach ($listOfFlights as $flightDetails) {
                     if (count($allPaths) >= $maxPaths) break;
@@ -171,13 +172,16 @@ class GraphService
                     $depTime = strtotime($flightDetails['flight']->departure_time);
                     $arrTime = strtotime($flightDetails['flight']->arrival_time);
 
+                    if ($startTimestamp && $depTime < $startTimestamp) continue;
+                    if ($endTimestamp && $arrTime > $endTimestamp) continue;
+
                     if ($lastArrivalTime !== null && $depTime < $lastArrivalTime) continue;
 
                     $currentPathFlights[] = $flightDetails;
 
                     $this->dfs(
                         $nextAirport, $destination, $visited, $currentPathFlights, 
-                        $allPaths, $arrTime, $depth + 1, $startTimestamp, $endTimestamp, $maxPaths
+                        $allPaths, $arrTime, $depth + 1, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats
                     );
 
                     array_pop($currentPathFlights);

@@ -28,19 +28,30 @@ class PathController extends Controller
             'criteria'             => 'nullable|array',
             'start_date'           => 'nullable|date',
             'end_date'             => 'nullable|date|after_or_equal:start_date',
+            'max_paths'            => 'nullable|integer|min:1|max:100',
+            'allow_repeats'        => 'nullable|boolean',
         ]);
 
-        $departureId = $request->input('departure_airport_id');
-        $arrivalId   = $request->input('arrival_airport_id');
-        $searchType  = $request->input('search_type');
-        $criteria    = $request->input('criteria') ?? ['distance', 'cost', 'time'];
-        $startDate   = $request->input('start_date');
-        $endDate     = $request->input('end_date');
+        $departureId  = $request->input('departure_airport_id');
+        $arrivalId    = $request->input('arrival_airport_id');
+        $searchType   = $request->input('search_type');
+        $criteria     = $request->input('criteria') ?? ['distance', 'cost', 'time'];
+        $startDate    = $request->input('start_date');
+        $endDate      = $request->input('end_date');
+        $maxPaths     = $request->input('max_paths', 15);
+        $allowRepeats = $request->boolean('allow_repeats');
 
         try {
             // 🔹 CASO A: DFS (Explorar todas las alternativas)
             if ($searchType === 'all_alternative') {
-                $allPaths = $pathService->getAllAlternativePaths($departureId, $arrivalId, $startDate, $endDate);
+                $allPaths = $pathService->getAllAlternativePaths(
+                    $departureId,
+                    $arrivalId,
+                    $startDate,
+                    $endDate,
+                    $maxPaths,
+                    $allowRepeats
+                );
 
                 return view('paths.all', compact('allPaths'));
             }

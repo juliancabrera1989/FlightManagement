@@ -85,20 +85,87 @@ class PathService
         return $paths;
     }
 
-public function getAllAlternativePaths($departure_airport_id, $arrival_airport_id, $startDate = null, $endDate = null)
+// public function getAllAlternativePaths($departure_airport_id, $arrival_airport_id, $startDate = null, $endDate = null)
+// {
+//     // Si no viene fecha inicial, usamos la fecha actual por defecto
+//     if (!$startDate) {
+//         $startDate = now()->toDateTimeString();
+//     }
+
+//     // Llamada limpia al método público de GraphService
+//     $rawPaths = $this->graphService->findAllPaths(
+//         $departure_airport_id, 
+//         $arrival_airport_id, 
+//         $startDate, 
+//         $endDate,
+//         50 // Límite de rutas para evitar colgar el servidor
+//     );
+
+//     $processedPaths = collect();
+
+//     foreach ($rawPaths as $flightRoute) {
+//         $flights = collect();
+//         $total_cost = 0;
+//         $total_distance = 0;
+//         $airportsIds = [];
+
+//         foreach ($flightRoute as $flightDetails) {
+//             $flight = $flightDetails['flight'];
+//             $flights->push($flight);
+//             $total_cost += $flightDetails['cost'];
+//             $total_distance += $flightDetails['distance'];
+
+//             $airportsIds[] = $flight->departure_airport_id;
+//             $airportsIds[] = $flight->arrival_airport_id;
+//         }
+
+//         $airportsIds = array_values(array_unique($airportsIds));
+        
+//         $airports = Airport::whereIn('id', $airportsIds)
+//             ->get()
+//             ->sortBy(function ($airport) use ($airportsIds) {
+//                 return array_search($airport->id, $airportsIds);
+//             })
+//             ->values()
+//             ->all();
+
+//         $first_departure_time = $flights->isNotEmpty() ? $flights->first()->departure_time : null;
+//         $final_arrival_time = $flights->isNotEmpty() ? $flights->last()->arrival_time : null;
+//         $transhipments = $flights->count() - 1;
+//         $total_time = ($first_departure_time && $final_arrival_time) 
+//             ? Carbon::parse($first_departure_time)->diffInMinutes(Carbon::parse($final_arrival_time))
+//             : 0;
+
+//         $processedPaths->push(new Path(
+//             $airports,
+//             $flights,
+//             $total_cost,
+//             $transhipments,
+//             $final_arrival_time,
+//             $total_distance,
+//             $total_time,
+//             $first_departure_time
+//         ));
+//     }
+
+//     return $processedPaths->sortBy('final_arrival_time')->values();
+// }
+
+public function getAllAlternativePaths($departure_airport_id, $arrival_airport_id, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
 {
     // Si no viene fecha inicial, usamos la fecha actual por defecto
     if (!$startDate) {
         $startDate = now()->toDateTimeString();
     }
 
-    // Llamada limpia al método público de GraphService
+    // Pasamos los nuevos parámetros al GraphService
     $rawPaths = $this->graphService->findAllPaths(
         $departure_airport_id, 
         $arrival_airport_id, 
         $startDate, 
         $endDate,
-        50 // Límite de rutas para evitar colgar el servidor
+        $maxPaths,
+        $allowRepeats
     );
 
     $processedPaths = collect();
