@@ -136,17 +136,83 @@ class GraphService
         ];
     }
 
-    public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
-    {
-        $allPaths = [];
-        $visited = [];
-        $startTimestamp = $startDate ? strtotime($startDate) : null;
-        $endTimestamp = $endDate ? strtotime($endDate) : null;
+    // public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
+    // {
+    //     $allPaths = [];
+    //     $visited = [];
+    //     $startTimestamp = $startDate ? strtotime($startDate) : null;
+    //     $endTimestamp = $endDate ? strtotime($endDate) : null;
 
-        $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats);
+    //     $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats);
 
-        return $allPaths;
+    //     return $allPaths;
+    // }
+    
+//  public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
+//     {
+//     $allPaths = [];
+//     $visited = [];
+//     $startTimestamp = $startDate ? strtotime($startDate) : null;
+//     $endTimestamp = $endDate ? strtotime($endDate) : null;
+
+//     $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats);
+
+//     // Si NO se permiten repeticiones, filtramos para que cada camino tenga una secuencia única de aeropuertos
+//     if (!$allowRepeats) {
+//         $uniquePaths = [];
+//         $seenSequences = [];
+
+//         foreach ($allPaths as $path) {
+//             // Generamos una firma única basada en la secuencia de IDs de aeropuertos
+//             $sequenceKey = implode('->', array_map(function($item) {
+//                 return $item['flight']->departure_airport_id . '-' . $item['flight']->arrival_airport_id;
+//             }, $path));
+
+//             if (!in_array($sequenceKey, $seenSequences)) {
+//                 $seenSequences[] = $sequenceKey;
+//                 $uniquePaths[] = $path;
+//             }
+//         }
+
+//         return array_slice($uniquePaths, 0, $maxPaths);
+//     }
+
+//     return array_slice($allPaths, 0, $maxPaths);
+// }
+
+public function findAllPaths($start, $end, $startDate = null, $endDate = null, $maxPaths = 15, $allowRepeats = false)
+{
+    $allPaths = [];
+    $visited = [];
+    $startTimestamp = $startDate ? strtotime($startDate) : null;
+    $endTimestamp = $endDate ? strtotime($endDate) : null;
+
+    // Si no permite repetidos, le pedimos mas caminos al DFS para tener margen tras el filtrado
+    $searchLimit = $allowRepeats ? $maxPaths : ($maxPaths * 4);
+
+    $this->dfs($start, $end, $visited, [], $allPaths, null, 0, $startTimestamp, $endTimestamp, $searchLimit, $allowRepeats);
+
+    if (!$allowRepeats) {
+        $uniquePaths = [];
+        $seenSequences = [];
+
+        foreach ($allPaths as $path) {
+            // Firma de secuencia de aeropuertos (ej: "ORD-SIN->SIN-SYD->SYD-FRA")
+            $sequenceKey = implode('->', array_map(function($item) {
+                return $item['flight']->departure_airport_id . '-' . $item['flight']->arrival_airport_id;
+            }, $path));
+
+            if (!in_array($sequenceKey, $seenSequences)) {
+                $seenSequences[] = $sequenceKey;
+                $uniquePaths[] = $path;
+            }
+        }
+
+        return array_slice($uniquePaths, 0, $maxPaths);
     }
+
+    return array_slice($allPaths, 0, $maxPaths);
+}
 
     protected function dfs($currentAirport, $destination, &$visited, $currentPathFlights, &$allPaths, $lastArrivalTime, $depth, $startTimestamp, $endTimestamp, $maxPaths, $allowRepeats)
     {

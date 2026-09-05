@@ -40,18 +40,16 @@
                                 <span>{{ end($path->airports)->code }}</span>
                             </div>
 
-                            <div class="row text-center bg-light p-2 rounded">
-                                <div class="col-4">
-                                    <small class="text-muted d-block">Price</small>
-                                    <span class="fw-bold text-success">${{ number_format($path->total_cost, 2) }}</span>
-                                </div>
-                                <div class="col-4">
+                            <div class="row text-center bg-light p-2 rounded mt-3">
+                                <div class="col-6">
                                     <small class="text-muted d-block">Distance</small>
-                                    <span class="fw-bold text-primary">{{ round($path->total_distance) }} km</span>
+                                    <span class="fw-bold text-primary">{{ number_format($path->total_distance, 0) }} km</span>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6">
                                     <small class="text-muted d-block">Duration</small>
-                                    <span class="fw-bold text-danger">{{ floor($path->total_time / 60) }}h {{ $path->total_time % 60 }}m</span>
+                                    <span class="fw-bold text-danger">
+                                        {{ floor($path->total_time / 60) }}h {{ $path->total_time % 60 }}m
+                                    </span>
                                 </div>
                             </div>
                         </div>
