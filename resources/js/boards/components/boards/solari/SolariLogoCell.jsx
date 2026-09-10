@@ -6,7 +6,7 @@ const ROTATION_SPEED = 180; // ms por cada flap
 export default function SolariLogoCell({
   mode,
   targetAirlineId,
-  airlineCharset = [], // 🎯 Recibimos el abecedario dinámico aquí 
+  airlineCharset = [],
   onBuildDone,
   onClearDone
 }) {
@@ -14,17 +14,22 @@ export default function SolariLogoCell({
   const [isBlack, setIsBlack] = useState(true);
   const [flipTop, setFlipTop] = useState(false);
   const [flipBottom, setFlipBottom] = useState(false);
-  const runningRef = useRef(false);
 
-  // 🎯 REFERENCIA CLAVE: Guarda el índice que se muestra de fondo abajo
+  const runningRef = useRef(false);
+  const timerRef = useRef(null);
+
+  // 🎯 Referencias síncronas para evitar saltos o duplicaciones en los setTimeout
+  const currentIndexRef = useRef(0);
   const bottomAirlineIndexRef = useRef(0);
 
   // === RESET visual al entrar en BLACK ===
   useEffect(() => {
     if (mode === "BLACK") {
+      if (timerRef.current) clearTimeout(timerRef.current);
       runningRef.current = false;
       setIsBlack(true);
       setCurrentAirlineIndex(0); 
+      currentIndexRef.current = 0;
       bottomAirlineIndexRef.current = 0;
       setFlipTop(false);
       setFlipBottom(false);
@@ -33,61 +38,75 @@ export default function SolariLogoCell({
 
   // === Motor de Rotación Mecánica de Logos ===
   const runRotation = (targetIndex, callback) => {
-    if (runningRef.current) return;
+    // 1. Si no hay abecedario o el índice destino es inválido, avisamos y salimos sin trancar la fase
+    if (!airlineCharset || airlineCharset.length === 0 || targetIndex < 0 || targetIndex >= airlineCharset.length) {
+      runningRef.current = false;
+      callback && callback();
+      return;
+    }
 
-    // Si no hay que rotar o el destino no existe, reportamos fin inmediatamente
-    if (targetIndex < 0 || targetIndex >= airlineCharset.length) {
+    // 2. Si ya estamos exactamente en el logo objetivo, frenamos de inmediato
+    if (currentIndexRef.current === targetIndex) {
       runningRef.current = false;
       if (targetIndex === 0) setIsBlack(true);
+      else setIsBlack(false);
       callback && callback();
       return;
     }
 
-    // Si ya estamos exactamente en el logo objetivo
-    if (currentAirlineIndex === targetIndex) {
-      runningRef.current = false;
-      setIsBlack(targetIndex === 0);
-      callback && callback();
-      return;
-    }
+    // Si ya hay una animación corriendo para esta misma celda, no duplicamos loops
+    if (runningRef.current) return;
 
     runningRef.current = true;
     setIsBlack(false);
 
-    let current = currentAirlineIndex;
-
     const step = () => {
       if (!runningRef.current) return;
 
-      // 1. Calculamos cuál será el próximo logo antes de girar
+      const current = currentIndexRef.current;
+
+      // Condición de parada exacta: si alcanzamos el objetivo, notificamos la fase
+      if (current === targetIndex) {
+        runningRef.current = false;
+        if (current === 0) setIsBlack(true);
+        callback && callback();
+        return;
+      }
+
+      // Avanzamos o retrocedemos 1 posición
       const next = current < targetIndex ? current + 1 : current - 1;
 
-      // 2. La solapa superior cambia AL NUEVO LOGO y empieza a caer
+      // Actualizamos estado de la solapa superior (siguiente logo)
+      currentIndexRef.current = next;
       setCurrentAirlineIndex(next);
       setFlipTop(true);
       setFlipBottom(false);
 
-      // 3. Cuando la solapa superior impacta en el centro (FLIP_DELAY)...
-      setTimeout(() => {
+      // Impacto en el centro (caída de solapa)
+      timerRef.current = setTimeout(() => {
         if (!runningRef.current) return;
 
         setFlipTop(false);
         setFlipBottom(true);
         
-        // 🎯 SINCRO PERFECTA: Recién acá la solapa inferior adopta el nuevo logo
+        // Sincronización exacta de la solapa inferior
         bottomAirlineIndexRef.current = next;
-        current = next;
 
-        // Si ya igualamos el objetivo, frenamos
-        if (current === targetIndex) {
+        // Si en este paso llegamos al destino final
+        if (next === targetIndex) {
           runningRef.current = false;
-          if (current === 0) setIsBlack(true); 
-          callback && callback();
+          if (next === 0) setIsBlack(true);
+
+          // Esperamos a que concluya el movimiento visual antes de dar por terminada la fase
+          timerRef.current = setTimeout(() => {
+            setFlipBottom(false);
+            callback && callback();
+          }, ROTATION_SPEED - FLIP_DELAY);
           return;
         }
 
-        // 4. Esperamos a que termine el ciclo completo para el siguiente flap
-        setTimeout(step, ROTATION_SPEED - FLIP_DELAY);
+        // Siguiente flap
+        timerRef.current = setTimeout(step, ROTATION_SPEED - FLIP_DELAY);
 
       }, FLIP_DELAY);
     };
@@ -104,18 +123,18 @@ export default function SolariLogoCell({
       return;
     }
 
-    // Búsqueda flexible comparando tipos de datos como string para no romper en -1
+    // Comparación estricta pero independiente del tipo (String vs Number)
     const targetIndex = airlineCharset.findIndex(
       (a) => String(a.id) === String(targetAirlineId)
     );
 
     if (targetIndex === -1) {
-      onBuildDone && onBuildDone(); 
+      onBuildDone && onBuildDone();
       return;
     }
 
     runRotation(targetIndex, onBuildDone);
-  }, [mode, targetAirlineId]);
+  }, [mode, targetAirlineId, airlineCharset]);
 
   // === Lógica de CLEAR ===
   useEffect(() => {
@@ -127,7 +146,7 @@ export default function SolariLogoCell({
     }
 
     runRotation(0, onClearDone);
-  }, [mode]);
+  }, [mode, airlineCharset]);
 
   // Resuelve las URLs de las imágenes
   const baseUrl = window.APP_URL || ""; 
@@ -143,7 +162,7 @@ export default function SolariLogoCell({
       
       {/* Mitad Superior: Muestra el logo hacia el cual estamos transicionando */}
       <div className="solari-flap top">
-        {topLogoSrc && (
+        {topLogoSrc && !isBlack && (
           <img 
             src={topLogoSrc} 
             alt={topLogoData?.name || "logo"} 
@@ -154,7 +173,7 @@ export default function SolariLogoCell({
 
       {/* Mitad Inferior: Muestra el logo estático anterior hasta el impacto exacto */}
       <div className="solari-flap bottom">
-        {bottomLogoSrc && (
+        {bottomLogoSrc && !isBlack && (
           <img 
             src={bottomLogoSrc} 
             alt={bottomLogoData?.name || "logo"} 
