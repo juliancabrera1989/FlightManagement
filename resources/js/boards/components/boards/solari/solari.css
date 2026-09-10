@@ -735,3 +735,20 @@
 .solari-cell-logo.flip-bottom .solari-flap.bottom {
   animation: flipBottom .13s linear forwards;
 }
+
+
+
+
+/* === AJUSTE DE CORTE DE LETRAS EN SOLAPAS === */
+.solari-flap span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  line-height: 1 !important;
+  transform: translateY(1px) !important;
+}
+
+.solari-flap.top {
+  overflow: hidden !important;
+}
