@@ -193,6 +193,7 @@ export default function SolarisBoard({
   const [cellsTotal, setCellsTotal] = useState(0);
   const [cellsDone, setCellsDone] = useState(0);
 
+  console.log("FASE:", phase, "CELDA COMPLETADAS:", cellsDone, "DE TOTAL:", cellsTotal);
   // 🎯 REINICIO LIMPIO CUANDO LLEGAN NUEVOS VUELOS
   useEffect(() => {
     setPageIndex(0);
