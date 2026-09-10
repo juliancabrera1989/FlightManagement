@@ -10,47 +10,44 @@ export default function SolariLogoCell({
   onBuildDone,
   onClearDone
 }) {
-  const [currentAirlineIndex, setCurrentAirlineIndex] = useState(-1); 
+  const [currentAirlineIndex, setCurrentAirlineIndex] = useState(0); 
   const [isBlack, setIsBlack] = useState(true);
   const [flipTop, setFlipTop] = useState(false);
   const [flipBottom, setFlipBottom] = useState(false);
   
   const runningRef = useRef(false);
   const timerRef = useRef(null);
-  const bottomAirlineIndexRef = useRef(-1);
+  const bottomAirlineIndexRef = useRef(0);
 
   const clearTimers = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
   };
 
-  // RESET visual al entrar en BLACK
+  // 1. RESET EN FASE BLACK
   useEffect(() => {
     if (mode === "BLACK") {
       clearTimers();
       runningRef.current = false;
       setIsBlack(true);
-      setCurrentAirlineIndex(-1); 
-      bottomAirlineIndexRef.current = -1;
+      setCurrentAirlineIndex(0); 
+      bottomAirlineIndexRef.current = 0;
       setFlipTop(false);
       setFlipBottom(false);
     }
   }, [mode]);
 
-  // Motor de Rotación
+  // Motor de animación (físicamente sincrónico con las letras)
   const runRotation = (targetIndex, callback) => {
-    clearTimers();
+    if (runningRef.current) return;
     runningRef.current = true;
     setIsBlack(false);
 
-    // Si el índice inicial es -1 (apagado), empezamos a rotar desde 0
-    let current = currentAirlineIndex < 0 ? 0 : currentAirlineIndex;
-    setCurrentAirlineIndex(current);
-    bottomAirlineIndexRef.current = current;
+    let current = currentAirlineIndex;
 
-    // Si la aerolínea objetivo es justamente la primera o es inválida
-    if (targetIndex === current || targetIndex < 0) {
+    // Si la aerolínea objetivo coincide con la posición actual
+    if (targetIndex === current) {
       runningRef.current = false;
-      if (targetIndex < 0) setIsBlack(true);
+      if (current === 0) setIsBlack(false); 
       callback && callback();
       return;
     }
@@ -87,24 +84,18 @@ export default function SolariLogoCell({
     step();
   };
 
-  // BUILD
+  // 2. FASE BUILD
   useEffect(() => {
     if (mode !== "BUILD") return;
 
-    if (!airlineCharset || airlineCharset.length === 0 || targetAirlineId == null) {
-      onBuildDone && onBuildDone();
+    if (!airlineCharset || airlineCharset.length === 0) {
+      onBuildDone && onBuildDone(); 
       return;
     }
 
-    // Búsqueda flexible de ID (soporta string, number y subobjetos)
-    const targetIndex = airlineCharset.findIndex(a => {
-      if (!a) return false;
-      const itemId = a.id ?? a.airline_id;
-      return String(itemId) === String(targetAirlineId);
-    });
-
+    const targetIndex = airlineCharset.findIndex(a => String(a.id) === String(targetAirlineId));
+    
     if (targetIndex === -1) {
-      console.warn(`[SolariLogoCell] No se encontró la aerolínea con ID: ${targetAirlineId} en airlineCharset`);
       onBuildDone && onBuildDone(); 
       return;
     }
@@ -114,7 +105,7 @@ export default function SolariLogoCell({
     return () => clearTimers();
   }, [mode, targetAirlineId, airlineCharset]);
 
-  // CLEAR
+  // 3. FASE CLEAR
   useEffect(() => {
     if (mode !== "CLEAR") return;
 
@@ -123,64 +114,45 @@ export default function SolariLogoCell({
       return;
     }
 
-    // Durante CLEAR, volvemos al estado negro aparente
-    runningRef.current = false;
-    setIsBlack(true);
-    setCurrentAirlineIndex(-1);
-    bottomAirlineIndexRef.current = -1;
-    onClearDone && onClearDone();
+    runRotation(0, onClearDone);
 
     return () => clearTimers();
   }, [mode, airlineCharset]);
 
-  // Construcción limpia de la URL de la imagen
-  const getLogoUrl = (itemIndex) => {
-    if (itemIndex < 0 || !airlineCharset[itemIndex]) return null;
-    const logoData = airlineCharset[itemIndex];
-    const path = logoData.logo_path || logoData.logo || logoData.url;
-    if (!path) return null;
+  // Resolución de rutas respetando window.APP_URL
+  const baseUrl = window.APP_URL || ""; 
 
-    if (path.startsWith("http://") || path.startsWith("https://")) {
-      return path;
-    }
+  const topLogoData = airlineCharset[currentAirlineIndex];
+  const topLogoSrc = topLogoData?.logo_path ? `${baseUrl}${topLogoData.logo_path}` : null;
 
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    return `${window.location.origin}${cleanPath}`;
-  };
-
-  const topLogoSrc = getLogoUrl(currentAirlineIndex);
-  const bottomLogoSrc = getLogoUrl(bottomAirlineIndexRef.current);
+  const bottomLogoData = airlineCharset[bottomAirlineIndexRef.current];
+  const bottomLogoSrc = bottomLogoData?.logo_path ? `${baseUrl}${bottomLogoData.logo_path}` : null;
 
   return (
-    <div 
-      className={`solari-cell-logo solari-logo-flap ${isBlack ? "black" : ""} ${flipTop ? "flip-top" : ""} ${flipBottom ? "flip-bottom" : ""}`}
-      style={{ backgroundColor: "#000", overflow: "hidden" }}
-    >
+    <div className={`solari-cell-logo solari-logo-flap ${isBlack ? "black" : ""} ${flipTop ? "flip-top" : ""} ${flipBottom ? "flip-bottom" : ""}`}>
+      
+      {/* Flap Superior: El CSS lo corta al 50% e invoca la mitad alta del logo */}
       <div className="solari-flap top">
-        {topLogoSrc ? (
+        {topLogoSrc && !isBlack && (
           <img 
             src={topLogoSrc} 
-            alt="logo" 
+            alt={topLogoData?.name || "logo"} 
             className="solari-logo-split"
-            onError={(e) => {
-              console.error(`Error cargando imagen: ${topLogoSrc}`);
-            }}
           />
-        ) : null}
+        )}
       </div>
 
+      {/* Flap Inferior: El CSS lo corta al 50% e invoca la mitad baja del logo */}
       <div className="solari-flap bottom">
-        {bottomLogoSrc ? (
+        {bottomLogoSrc && !isBlack && (
           <img 
             src={bottomLogoSrc} 
-            alt="logo" 
+            alt={bottomLogoData?.name || "logo"} 
             className="solari-logo-split"
-            onError={(e) => {
-              console.error(`Error cargando imagen: ${bottomLogoSrc}`);
-            }}
           />
-        ) : null}
+        )}
       </div>
+
     </div>
   );
 }
