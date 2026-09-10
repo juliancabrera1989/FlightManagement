@@ -44,7 +44,6 @@ export default function SolariLogoCell({
 
     let current = currentAirlineIndex;
 
-    // Si el índice objetivo es igual al actual o inválido
     if (targetIndex === current || targetIndex < 0) {
       runningRef.current = false;
       if (targetIndex === 0) setIsBlack(true);
@@ -118,22 +117,35 @@ export default function SolariLogoCell({
     return () => clearTimers();
   }, [mode, airlineCharset]);
 
-  const baseUrl = window.APP_URL || ""; 
+  // Función para construir la URL del logo de forma segura
+  const getLogoUrl = (logoData) => {
+    if (!logoData) return null;
+    const path = logoData.logo_path || logoData.logo;
+    if (!path) return null;
 
-  const topLogoData = airlineCharset[currentAirlineIndex];
-  const topLogoSrc = topLogoData?.logo_path ? `${baseUrl}${topLogoData.logo_path}` : null;
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
 
-  const bottomLogoData = airlineCharset[bottomAirlineIndexRef.current];
-  const bottomLogoSrc = bottomLogoData?.logo_path ? `${baseUrl}${bottomLogoData.logo_path}` : null;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${window.location.origin}${cleanPath}`;
+  };
+
+  const topLogoSrc = getLogoUrl(airlineCharset[currentAirlineIndex]);
+  const bottomLogoSrc = getLogoUrl(airlineCharset[bottomAirlineIndexRef.current]);
 
   return (
-    <div className={`solari-cell-logo solari-logo-flap ${isBlack ? "black" : ""} ${flipTop ? "flip-top" : ""} ${flipBottom ? "flip-bottom" : ""}`}>
+    <div 
+      className={`solari-cell-logo solari-logo-flap ${isBlack ? "black" : ""} ${flipTop ? "flip-top" : ""} ${flipBottom ? "flip-bottom" : ""}`}
+      style={{ backgroundColor: "#000" }}
+    >
       <div className="solari-flap top">
         {topLogoSrc && (
           <img 
             src={topLogoSrc} 
-            alt={topLogoData?.name || "logo"} 
+            alt="logo" 
             className="solari-logo-split"
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
         )}
       </div>
@@ -142,8 +154,9 @@ export default function SolariLogoCell({
         {bottomLogoSrc && (
           <img 
             src={bottomLogoSrc} 
-            alt={bottomLogoData?.name || "logo"} 
+            alt="logo" 
             className="solari-logo-split"
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
         )}
       </div>
