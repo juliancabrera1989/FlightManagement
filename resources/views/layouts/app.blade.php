@@ -310,76 +310,39 @@ footer {
 
 {{-- ✅ Page Content (Quitamos la clase container fija para permitir secciones full-width) --}}
 {{-- ✅ Contenedor dinámico: Si es el Home no aplica márgenes; si es otra página, mete .container y margen superior --}}
-    {{-- <!-- <main class="{{ Request::is('/') || Request::is('home') ? 'w-100 m-0 p-0' : 'container mt-5 pt-4 min-vh-100' }}">
-        @yield('content')
-    </main> -->
 
     {{-- ✅ Footer unificado (Cambiado el azul viejo por el gris oscuro del Navbar scrolled) --}}
-    <!-- <style>
-        footer {
-            background-color: #212529 !important; /* Bootstrap Dark exacto del navbar */
-            color: #94a3b8 !important;
-            text-align: center;
-            padding: 2rem 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: 0 !important; /* Evitamos espacios en blanco arriba del footer */
-        }
-        footer a {
-            color: #0dcaf0 !important; /* Cyan a juego con los links activos */
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-        footer a:hover {
-            color: #fff !important;
-            text-decoration: underline;
-        }
-    </style> -->
-    <!-- <footer>
-        <p>&copy; {{ date('Y') }} Flight Manager. All rights reserved.</p>
-        <p>
-            <a href="https://www.facebook.com/" target="_blank">Facebook</a> |
-            <a href="https://wa.me/" target="_blank">WhatsApp</a>
-        </p>
-    </footer> --> 
 
 
-@if (Request::is('/') || Request::is('home'))
-    {{-- Si es el Home, se renderiza tal cual lo tenías originalmente (Perfecto y transparente) --}}
-    <main class="w-100 m-0 p-0">
-        @yield('content')
-    </main>
-    <footer>
-        <p>&copy; {{ date('Y') }} Flight Manager. All rights reserved.</p>
-        <p>
-            <a href="https://www.facebook.com/" target="_blank">Facebook</a> |
-            <a href="https://wa.me/" target="_blank">WhatsApp</a>
-        </p>
-    </footer>
-@else
-    {{-- Estructura Flexbox global externa: el footer queda libre del .container del main --}}
-    <div class="d-flex flex-column" style="min-height: calc(100vh - 70px);">
-        
-        <main class="container mt-5 pt-4 flex-grow-1 d-flex flex-column justify-content-center">
+    @if (Request::is('/') || Request::is('home'))
+        {{-- Si es el Home, se renderiza tal cual lo tenías originalmente (Perfecto y transparente) --}}
+        <main class="w-100 m-0 p-0">
             @yield('content')
         </main>
-        
-        <footer class="mt-4">
+        <footer>
             <p>&copy; {{ date('Y') }} Flight Manager. All rights reserved.</p>
             <p>
                 <a href="https://www.facebook.com/" target="_blank">Facebook</a> |
                 <a href="https://wa.me/" target="_blank">WhatsApp</a>
             </p>
         </footer>
-    </div>
-@endif
-
-
-
-
-
-
-
-
+    @else
+        {{-- Estructura Flexbox global externa: el footer queda libre del .container del main --}}
+        <div class="d-flex flex-column" style="min-height: calc(100vh - 70px);">
+            
+            <main class="container mt-5 pt-4 flex-grow-1 d-flex flex-column justify-content-center">
+                @yield('content')
+            </main>
+            
+            <footer class="mt-4">
+                <p>&copy; {{ date('Y') }} Flight Manager. All rights reserved.</p>
+                <p>
+                    <a href="https://www.facebook.com/" target="_blank">Facebook</a> |
+                    <a href="https://wa.me/" target="_blank">WhatsApp</a>
+                </p>
+            </footer>
+        </div>
+    @endif
 
 
 

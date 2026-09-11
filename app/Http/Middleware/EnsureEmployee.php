@@ -10,30 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class EnsureEmployee
 {
-    // public function handle(Request $request, Closure $next): Response
-    // {
-    //     if (!auth()->check() || auth()->user()->role !== 'employee') {
-    //         abort(403, 'Unauthorized - Employees only.');
-    //     }
-
-    //     return $next($request);
-    // }
-
-
-
-    // public function handle(Request $request, Closure $next)
-    // {
-    //     $user = auth()->user();
-
-    //     // Permitir acceso si es empleado de aeropuerto O empleado de aerolínea (o admin)
-    //     if ($user && in_array($user->role, ['airport_employee', 'airline_employee', 'employee', 'admin'])) {
-    //         return $next($request);
-    //     }
-
-    //     abort(403, 'No tienes permisos de empleado para acceder a esta sección.');
-    // }
-
-
+  
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
