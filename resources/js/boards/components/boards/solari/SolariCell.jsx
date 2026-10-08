@@ -1,47 +1,50 @@
 import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_CHARSET = [
-  "1","2","3","4","5","6","7","8","9","0",
-  "A","B","C","D","E","F","G",
+  " ", "A","B","C","D","E","F","G",
   "H","I","J","K","L","M","N",
   "O","P","Q","R","S","T","U",
   "V","W","X","Y","Z",
-  ".", "-", "/", " "
+  "1","2","3","4","5","6","7","8","9","0",
+  ".", "-", "/"
 ];
 
-const NUMERIC_CHARSET = ["1","2","3","4","5","6","7","8","9","0", " "];
+const NUMERIC_CHARSET = [" ", "1","2","3","4","5","6","7","8","9","0"];
 
-const FLIP_DELAY = 40;
+const FLIP_DELAY = 30;
+const STEP_DELAY = 60;
 
 export default function SolariCell({
   mode,
   targetChar,
-  animable,
+  animable = true,
   onBuildDone,
   onClearDone,
   isNumeric = false
 }) {
   const CHARSET = isNumeric ? NUMERIC_CHARSET : DEFAULT_CHARSET;
 
-  const [displayChar, setDisplayChar] = useState(null);
+  const [displayChar, setDisplayChar] = useState(" ");
   const [isBlack, setIsBlack] = useState(true);
   const [flipTop, setFlipTop] = useState(false);
   const [flipBottom, setFlipBottom] = useState(false);
 
   const runningRef = useRef(false);
-  const timerRef = useRef(null);
+  const timer1Ref = useRef(null);
+  const timer2Ref = useRef(null);
 
   const clearTimers = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timer1Ref.current) clearTimeout(timer1Ref.current);
+    if (timer2Ref.current) clearTimeout(timer2Ref.current);
   };
 
-  // RESET visual al entrar en BLACK
+  // Reset absoluto cuando entramos a BLACK
   useEffect(() => {
     if (mode === "BLACK") {
       clearTimers();
       runningRef.current = false;
       setIsBlack(true);
-      setDisplayChar(null);
+      setDisplayChar(" ");
       setFlipTop(false);
       setFlipBottom(false);
     }
@@ -52,45 +55,49 @@ export default function SolariCell({
     if (mode !== "BUILD") return;
 
     if (!animable) {
-      onBuildDone && onBuildDone();
+      onBuildDone?.();
       return;
     }
 
-    if (runningRef.current) return;
+    clearTimers();
     runningRef.current = true;
     setIsBlack(false);
 
     const normalizedChar = (targetChar || " ").toUpperCase();
     let targetIndex = CHARSET.indexOf(normalizedChar);
-    if (targetIndex === -1) targetIndex = CHARSET.indexOf(" ");
+    if (targetIndex === -1) targetIndex = 0; // Si no existe, cae en espacio ' '
 
     let current = 0;
 
     const step = () => {
       if (!runningRef.current) return;
 
+      setDisplayChar(CHARSET[current]);
       setFlipTop(true);
       setFlipBottom(false);
-      setDisplayChar(CHARSET[current]);
 
-      timerRef.current = setTimeout(() => {
+      timer1Ref.current = setTimeout(() => {
+        if (!runningRef.current) return;
         setFlipTop(false);
         setFlipBottom(true);
       }, FLIP_DELAY);
 
       if (current === targetIndex) {
         runningRef.current = false;
-        onBuildDone && onBuildDone();
+        onBuildDone?.();
         return;
       }
 
       current += 1;
-      timerRef.current = setTimeout(step, 120);
+      timer2Ref.current = setTimeout(step, STEP_DELAY);
     };
 
     step();
 
-    return () => clearTimers();
+    return () => {
+      runningRef.current = false;
+      clearTimers();
+    };
   }, [mode, targetChar, animable]);
 
   // CLEAR
@@ -98,14 +105,15 @@ export default function SolariCell({
     if (mode !== "CLEAR") return;
 
     if (!animable) {
-      onClearDone && onClearDone();
+      onClearDone?.();
       return;
     }
 
+    clearTimers();
     runningRef.current = true;
 
-    const normalizedChar = (targetChar || " ").toUpperCase();
-    let startIndex = CHARSET.indexOf(normalizedChar);
+    const currentChar = displayChar || " ";
+    let startIndex = CHARSET.indexOf(currentChar);
     if (startIndex === -1) startIndex = 0;
 
     let current = startIndex;
@@ -113,31 +121,35 @@ export default function SolariCell({
     const step = () => {
       if (!runningRef.current) return;
 
-      if (current >= CHARSET.length) {
+      if (current >= CHARSET.length || current === 0) {
         runningRef.current = false;
         setIsBlack(true);
-        setDisplayChar(null);
-        onClearDone && onClearDone();
+        setDisplayChar(" ");
+        onClearDone?.();
         return;
       }
 
+      setDisplayChar(CHARSET[current]);
       setFlipTop(true);
       setFlipBottom(false);
-      setDisplayChar(CHARSET[current]);
 
-      timerRef.current = setTimeout(() => {
+      timer1Ref.current = setTimeout(() => {
+        if (!runningRef.current) return;
         setFlipTop(false);
         setFlipBottom(true);
       }, FLIP_DELAY);
 
-      current += 1;
-      timerRef.current = setTimeout(step, 120);
+      current = (current + 1) % CHARSET.length;
+      timer2Ref.current = setTimeout(step, STEP_DELAY);
     };
 
     step();
 
-    return () => clearTimers();
-  }, [mode, animable, targetChar]);
+    return () => {
+      runningRef.current = false;
+      clearTimers();
+    };
+  }, [mode, animable]);
 
   return (
     <div className={`solari-cell ${isBlack ? "black" : ""} ${flipTop ? "flip-top" : ""} ${flipBottom ? "flip-bottom" : ""}`}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const FLIP_DELAY = 40; // ms entre top y bottom (visual)
 const ROTATION_SPEED = 180; // ms por cada flap
