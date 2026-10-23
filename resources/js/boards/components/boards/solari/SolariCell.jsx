@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const DEFAULT_CHARSET = [
-  " ", "A","B","C","D","E","F","G",
+  " ", 
+  "A","B","C","D","E","F","G",
   "H","I","J","K","L","M","N",
   "O","P","Q","R","S","T","U",
   "V","W","X","Y","Z",
@@ -11,15 +12,13 @@ const DEFAULT_CHARSET = [
 
 const NUMERIC_CHARSET = [" ", "1","2","3","4","5","6","7","8","9","0"];
 
-const FLIP_DELAY = 30;
-const STEP_DELAY = 60;
+const STEP_DELAY = 100; // Velocidad fluida y segura por paso
+const FLIP_DELAY = 50;  // Mitad exacta para el cambio de solapa
 
 export default function SolariCell({
   mode,
   targetChar,
   animable = true,
-  onBuildDone,
-  onClearDone,
   isNumeric = false
 }) {
   const CHARSET = isNumeric ? NUMERIC_CHARSET : DEFAULT_CHARSET;
@@ -30,18 +29,10 @@ export default function SolariCell({
   const [flipBottom, setFlipBottom] = useState(false);
 
   const runningRef = useRef(false);
-  const timer1Ref = useRef(null);
-  const timer2Ref = useRef(null);
 
-  const clearTimers = () => {
-    if (timer1Ref.current) clearTimeout(timer1Ref.current);
-    if (timer2Ref.current) clearTimeout(timer2Ref.current);
-  };
-
-  // Reset absoluto cuando entramos a BLACK
+  // RESET absoluto al entrar en BLACK
   useEffect(() => {
     if (mode === "BLACK") {
-      clearTimers();
       runningRef.current = false;
       setIsBlack(true);
       setDisplayChar(" ");
@@ -50,53 +41,73 @@ export default function SolariCell({
     }
   }, [mode]);
 
-  // BUILD
+  // BUILD: Recorre estrictamente desde el espacio hasta la letra objetivo de forma independiente
   useEffect(() => {
     if (mode !== "BUILD") return;
 
+    const normalizedTarget = (targetChar || " ").toUpperCase();
+    const targetIdx = CHARSET.indexOf(normalizedTarget);
+    const finalTargetIndex = targetIdx !== -1 ? targetIdx : 0;
+
     if (!animable) {
-      onBuildDone?.();
+      setDisplayChar(CHARSET[finalTargetIndex]);
+      setIsBlack(false);
       return;
     }
 
-    clearTimers();
     runningRef.current = true;
     setIsBlack(false);
 
-    const normalizedChar = (targetChar || " ").toUpperCase();
-    let targetIndex = CHARSET.indexOf(normalizedChar);
-    if (targetIndex === -1) targetIndex = 0; // Si no existe, cae en espacio ' '
+    let currentIdx = 0; // Arrancamos siempre desde el inicio (espacio en índice 0) para un giro mecánico realista
+    setDisplayChar(CHARSET[currentIdx]);
 
-    let current = 0;
+    let timeoutStep = null;
+    let timeoutFlip = null;
 
     const step = () => {
       if (!runningRef.current) return;
 
-      setDisplayChar(CHARSET[current]);
-      setFlipTop(true);
-      setFlipBottom(false);
-
-      timer1Ref.current = setTimeout(() => {
-        if (!runningRef.current) return;
-        setFlipTop(false);
-        setFlipBottom(true);
-      }, FLIP_DELAY);
-
-      if (current === targetIndex) {
+      // Si ya llegamos al índice objetivo, nos plantamos en reposo absoluto
+      if (currentIdx === finalTargetIndex) {
         runningRef.current = false;
-        onBuildDone?.();
+        setFlipTop(false);
+        setFlipBottom(false);
         return;
       }
 
-      current += 1;
-      timer2Ref.current = setTimeout(step, STEP_DELAY);
+      currentIdx = (currentIdx + 1) % CHARSET.length;
+      setDisplayChar(CHARSET[currentIdx]);
+
+      // Animación de la solapa
+      setFlipTop(true);
+      setFlipBottom(false);
+
+      timeoutFlip = setTimeout(() => {
+        if (!runningRef.current) return;
+        setFlipTop(false);
+        setFlipBottom(true);
+
+        // Si este paso exacto es el target, nos detenemos aquí con seguridad
+        if (currentIdx === finalTargetIndex) {
+          timeoutStep = setTimeout(() => {
+            if (!runningRef.current) return;
+            runningRef.current = false;
+            setFlipTop(false);
+            setFlipBottom(false);
+          }, FLIP_DELAY);
+        } else {
+          timeoutStep = setTimeout(step, STEP_DELAY - FLIP_DELAY);
+        }
+      }, FLIP_DELAY);
     };
 
-    step();
+    // Arrancar el primer paso
+    timeoutStep = setTimeout(step, STEP_DELAY);
 
     return () => {
       runningRef.current = false;
-      clearTimers();
+      if (timeoutStep) clearTimeout(timeoutStep);
+      if (timeoutFlip) clearTimeout(timeoutFlip);
     };
   }, [mode, targetChar, animable]);
 
@@ -105,49 +116,50 @@ export default function SolariCell({
     if (mode !== "CLEAR") return;
 
     if (!animable) {
-      onClearDone?.();
+      setIsBlack(true);
+      setDisplayChar(" ");
       return;
     }
 
-    clearTimers();
     runningRef.current = true;
+    let currentIdx = CHARSET.indexOf(displayChar);
+    if (currentIdx === -1) currentIdx = 0;
 
-    const currentChar = displayChar || " ";
-    let startIndex = CHARSET.indexOf(currentChar);
-    if (startIndex === -1) startIndex = 0;
+    let timeoutStep = null;
+    let timeoutFlip = null;
 
-    let current = startIndex;
-
-    const step = () => {
+    const runClear = () => {
       if (!runningRef.current) return;
 
-      if (current >= CHARSET.length || current === 0) {
-        runningRef.current = false;
-        setIsBlack(true);
-        setDisplayChar(" ");
-        onClearDone?.();
-        return;
-      }
+      currentIdx = (currentIdx + 1) % CHARSET.length;
+      setDisplayChar(CHARSET[currentIdx]);
 
-      setDisplayChar(CHARSET[current]);
       setFlipTop(true);
       setFlipBottom(false);
 
-      timer1Ref.current = setTimeout(() => {
+      timeoutFlip = setTimeout(() => {
         if (!runningRef.current) return;
         setFlipTop(false);
         setFlipBottom(true);
-      }, FLIP_DELAY);
 
-      current = (current + 1) % CHARSET.length;
-      timer2Ref.current = setTimeout(step, STEP_DELAY);
+        if (currentIdx === 0) {
+          runningRef.current = false;
+          setIsBlack(true);
+          setDisplayChar(" ");
+          setFlipTop(false);
+          setFlipBottom(false);
+        } else {
+          timeoutStep = setTimeout(runClear, STEP_DELAY - FLIP_DELAY);
+        }
+      }, FLIP_DELAY);
     };
 
-    step();
+    timeoutStep = setTimeout(runClear, STEP_DELAY);
 
     return () => {
       runningRef.current = false;
-      clearTimers();
+      if (timeoutStep) clearTimeout(timeoutStep);
+      if (timeoutFlip) clearTimeout(timeoutFlip);
     };
   }, [mode, animable]);
 
